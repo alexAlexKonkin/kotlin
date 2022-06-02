@@ -111,7 +111,7 @@ class ObjectUsageLowering(
         irBody.transformChildrenVoid(object : IrElementTransformerVoid() {
             override fun visitGetObjectValue(expression: IrGetObjectValue): IrExpression {
                 val obj: IrClass = expression.symbol.owner
-                if (obj.isEffectivelyExternal()) return expression
+                if (obj.isEffectivelyExternal() || obj.kind != ClassKind.OBJECT) return expression
                 return JsIrBuilder.buildCall(context.getOrCreateGetInstanceFunction(obj).symbol)
             }
         })
