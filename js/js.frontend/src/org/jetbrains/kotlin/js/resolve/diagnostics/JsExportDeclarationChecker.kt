@@ -207,7 +207,7 @@ object JsExportDeclarationChecker : DeclarationChecker {
 
         if (descriptor !is MemberDescriptor) return false
 
-        if (KotlinBuiltIns.isEnum(this)) return true
+        if (KotlinBuiltIns.isAnyKindOfEnum(this)) return true
 
         return descriptor.isEffectivelyExternal() || AnnotationsUtils.isExportedObject(descriptor, bindingContext)
     }
