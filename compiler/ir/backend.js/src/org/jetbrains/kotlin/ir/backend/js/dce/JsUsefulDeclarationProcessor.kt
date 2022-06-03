@@ -15,6 +15,7 @@ import org.jetbrains.kotlin.ir.backend.js.utils.getJsNameOrKotlinName
 import org.jetbrains.kotlin.ir.backend.js.utils.invokeFunForLambda
 import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.expressions.IrCall
+import org.jetbrains.kotlin.ir.expressions.IrGetObjectValue
 import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
 import org.jetbrains.kotlin.ir.types.classOrNull
 import org.jetbrains.kotlin.ir.types.classifierOrFail
@@ -32,6 +33,16 @@ internal class JsUsefulDeclarationProcessor(
     private val hashCodeMethod = getMethodOfAny("hashCode")
 
     override val bodyVisitor: BodyVisitorBase = object : BodyVisitorBase() {
+        override fun visitGetObjectValue(expression: IrGetObjectValue, data: IrDeclaration) {
+            super.visitGetObjectValue(expression, data)
+            with(expression.symbol.owner) {
+                if (!isExternal) {
+                    referencedJsClasses += this
+                    constructors.forEach { it.enqueue(data, "intrinsic: jsClass (constructor)") }
+                }
+            }
+        }
+
         override fun visitCall(expression: IrCall, data: IrDeclaration) {
             super.visitCall(expression, data)
             when (expression.symbol) {
@@ -109,6 +120,7 @@ internal class JsUsefulDeclarationProcessor(
                 }
             }
         }
+
     }
 
     override fun processClass(irClass: IrClass) {

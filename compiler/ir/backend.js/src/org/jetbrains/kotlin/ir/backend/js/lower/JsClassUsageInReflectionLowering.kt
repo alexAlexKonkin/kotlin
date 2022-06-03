@@ -6,11 +6,14 @@
 package org.jetbrains.kotlin.ir.backend.js.lower
 
 import org.jetbrains.kotlin.backend.common.BodyLoweringPass
+import org.jetbrains.kotlin.ir.IrElement
+import org.jetbrains.kotlin.ir.UNDEFINED_OFFSET
 import org.jetbrains.kotlin.ir.backend.js.JsIrBackendContext
+import org.jetbrains.kotlin.ir.backend.js.ir.JsIrBuilder
 import org.jetbrains.kotlin.ir.declarations.IrDeclaration
 import org.jetbrains.kotlin.ir.expressions.*
+import org.jetbrains.kotlin.ir.expressions.impl.IrConstImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrDynamicMemberExpressionImpl
-import org.jetbrains.kotlin.ir.expressions.impl.IrGetObjectValueImpl
 import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
 import org.jetbrains.kotlin.ir.util.fqNameWhenAvailable
 import org.jetbrains.kotlin.ir.visitors.IrElementTransformerVoid
@@ -37,8 +40,17 @@ class JsClassUsageInReflectionLowering(val backendContext: JsIrBackendContext) :
         })
     }
 
-    private fun IrClassReference.generateDirectValueUsage(): IrGetObjectValue? {
-        return (symbol as? IrClassSymbol)?.let { IrGetObjectValueImpl(startOffset, endOffset, backendContext.irBuiltIns.anyType, it) }
+    private fun IrClassReference.generateDirectValueUsage(): IrExpression? {
+        return with(backendContext) {
+            when(val classSymbol = symbol as? IrClassSymbol ?: return null) {
+                irBuiltIns.nothingClass -> null
+                irBuiltIns.anyClass ->
+                    JsIrBuilder.buildCall(intrinsics.jsCode).apply {
+                        putValueArgument(0, IrConstImpl.string(UNDEFINED_OFFSET, UNDEFINED_OFFSET, irBuiltIns.stringType, "Object"))
+                    }
+                else -> JsIrBuilder.buildGetObjectValue(backendContext.irBuiltIns.anyType, classSymbol)
+            }
+        }
     }
 
     private fun IrGetClass.generateDirectConstructorUsage(): IrDynamicMemberExpression {
