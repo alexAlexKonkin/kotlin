@@ -52,8 +52,11 @@ abstract class UsefulDeclarationProcessor(
 
         override fun visitBlock(expression: IrBlock, data: IrDeclaration) {
             super.visitBlock(expression, data)
+
             if (expression !is IrReturnableBlock) return
-            expression.inlineFunctionSymbol?.owner?.enqueue(data, "inline function usage")
+
+            // Warning: The trick is required to handle unused js polyfills removal which are declared on inline functions
+            expression.inlineFunctionSymbol?.owner?.unsafeAddToUsefulDeclarationsAroundQueue()
         }
 
         override fun visitFieldAccess(expression: IrFieldAccessExpression, data: IrDeclaration) {
@@ -112,6 +115,10 @@ abstract class UsefulDeclarationProcessor(
             result.add(this)
             queue.addLast(this)
         }
+    }
+
+    private fun IrDeclaration.unsafeAddToUsefulDeclarationsAroundQueue() {
+        if (this !in result) { result.add(this) }
     }
 
     // This collection contains declarations whose reachability should be propagated to overrides.
