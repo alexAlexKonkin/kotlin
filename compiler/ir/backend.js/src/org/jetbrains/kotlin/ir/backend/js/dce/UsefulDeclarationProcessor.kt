@@ -53,10 +53,9 @@ abstract class UsefulDeclarationProcessor(
         override fun visitBlock(expression: IrBlock, data: IrDeclaration) {
             super.visitBlock(expression, data)
 
-            if (expression !is IrReturnableBlock) return
-
-            // Warning: The trick is required to handle unused js polyfills removal which are declared on inline functions
-            expression.inlineFunctionSymbol?.owner?.unsafeAddToUsefulDeclarationsAroundQueue()
+            if (expression is IrReturnableBlock) {
+                expression.inlineFunctionSymbol?.owner?.addToUsefulPolyfilledDeclarations()
+            }
         }
 
         override fun visitFieldAccess(expression: IrFieldAccessExpression, data: IrDeclaration) {
@@ -114,11 +113,15 @@ abstract class UsefulDeclarationProcessor(
         if (this !in result) {
             result.add(this)
             queue.addLast(this)
+
+            addToUsefulPolyfilledDeclarations()
         }
     }
 
-    private fun IrDeclaration.unsafeAddToUsefulDeclarationsAroundQueue() {
-        if (this !in result) { result.add(this) }
+    private fun IrDeclaration.addToUsefulPolyfilledDeclarations() {
+        if (hasJsPolyfill() && this !in usefulPolyfilledDeclarations) {
+            usefulPolyfilledDeclarations.add(this)
+        }
     }
 
     // This collection contains declarations whose reachability should be propagated to overrides.
@@ -134,6 +137,8 @@ abstract class UsefulDeclarationProcessor(
     private val queue = ArrayDeque<IrDeclaration>()
     protected val result = hashSetOf<IrDeclaration>()
     protected val classesWithObjectAssociations = hashSetOf<IrClass>()
+
+    public val usefulPolyfilledDeclarations = hashSetOf<IrDeclaration>()
 
     protected open fun processField(irField: IrField): Unit = Unit
 
