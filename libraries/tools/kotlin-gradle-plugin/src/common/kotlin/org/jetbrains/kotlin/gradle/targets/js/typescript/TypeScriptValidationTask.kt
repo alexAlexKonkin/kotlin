@@ -7,20 +7,24 @@ package org.jetbrains.kotlin.gradle.targets.js.typescript
 
 import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.TaskAction
+import org.gradle.work.Incremental
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinJsCompilation
 import org.jetbrains.kotlin.gradle.targets.js.RequiredKotlinJsDependency
+import org.jetbrains.kotlin.gradle.targets.js.ir.KotlinIrJsGeneratedTSValidationStrategy
 import org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsRootPlugin
 import org.jetbrains.kotlin.gradle.targets.js.npm.RequiresNpmDependencies
 import org.jetbrains.kotlin.gradle.targets.js.npm.npmProject
+import java.io.File
 
-open class TypeScriptValidationTask(
+class TypeScriptValidationTask(
     @Internal
     @Transient
     override val compilation: KotlinJsCompilation
 ) : DefaultTask(), RequiresNpmDependencies {
-    private val npmProject by lazy { compilation.npmProject }
+    private val npmProject = compilation.npmProject
 
     @get:Internal
     @Transient
@@ -33,16 +37,24 @@ open class TypeScriptValidationTask(
     override val requiredNpmDependencies: Set<RequiredKotlinJsDependency>
         get() = setOf(nodeJs.versions.typeScript)
 
-    @get:Input
-    val generatedDts
-        get() = npmProject.dist.listFiles { file -> file.extension == "d.ts" }
+    @Incremental
+    @InputDirectory
+    lateinit var inputDir: File
+
+    @Input
+    var validationStrategy: KotlinIrJsGeneratedTSValidationStrategy = KotlinIrJsGeneratedTSValidationStrategy.IGNORE
+
+    private val generatedDts
+        get() = inputDir.listFiles { file -> file.extension == ".ts" }
 
     @TaskAction
-    open fun run() {
+    fun run() {
         nodeJs.npmResolutionManager.checkRequiredDependencies(this, services, logger, project.path)
 
+        if (validationStrategy == KotlinIrJsGeneratedTSValidationStrategy.IGNORE) return
+
         val tsc = npmProject.require("typescript/bin/tsc")
-        val files = generatedDts?.map { it.absolutePath } ?: emptyList()
+        val files = generatedDts.map { it.absolutePath }
 
         if (files.isEmpty()) return
 
@@ -50,8 +62,13 @@ open class TypeScriptValidationTask(
             it.commandLine = listOf(tsc, "--noEmit") + files
         }
 
-        if (result.exitValue != 0) {
-            error("Oops, Kotlin/JS compiler generated invalid d.ts files.")
+        if (result.exitValue == 0) return
+
+        val message = "Oops, Kotlin/JS compiler generated invalid d.ts files."
+
+        when (validationStrategy) {
+            KotlinIrJsGeneratedTSValidationStrategy.ERROR -> error(message)
+            KotlinIrJsGeneratedTSValidationStrategy.IGNORE -> {}
         }
     }
 
