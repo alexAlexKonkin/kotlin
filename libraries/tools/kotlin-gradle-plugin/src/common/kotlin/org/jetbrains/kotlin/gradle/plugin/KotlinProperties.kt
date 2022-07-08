@@ -120,7 +120,7 @@ internal class PropertiesProvider private constructor(private val project: Proje
             ?: KotlinIrJsGeneratedTSValidationStrategy.IGNORE
 
     val jsIrGeneratedTypeScriptValidationProdStrategy: KotlinIrJsGeneratedTSValidationStrategy
-        get() = property("kotlin.js.ir.prod.typescript.validation.strategy")?.let { KotlinIrJsGeneratedTSValidationStrategy.byArgument(it) }
+        get() = property("kotlin.js.ir.production.typescript.validation.strategy")?.let { KotlinIrJsGeneratedTSValidationStrategy.byArgument(it) }
             ?: KotlinIrJsGeneratedTSValidationStrategy.IGNORE
 
     val incrementalMultiplatform: Boolean?

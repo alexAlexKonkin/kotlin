@@ -6,11 +6,7 @@
 package org.jetbrains.kotlin.gradle.targets.js.typescript
 
 import org.gradle.api.DefaultTask
-import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.InputDirectory
-import org.gradle.api.tasks.Internal
-import org.gradle.api.tasks.TaskAction
-import org.gradle.work.Incremental
+import org.gradle.api.tasks.*
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinJsCompilation
 import org.jetbrains.kotlin.gradle.targets.js.RequiredKotlinJsDependency
 import org.jetbrains.kotlin.gradle.targets.js.ir.KotlinIrJsGeneratedTSValidationStrategy
@@ -18,8 +14,11 @@ import org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsRootPlugin
 import org.jetbrains.kotlin.gradle.targets.js.npm.RequiresNpmDependencies
 import org.jetbrains.kotlin.gradle.targets.js.npm.npmProject
 import java.io.File
+import javax.inject.Inject
 
-class TypeScriptValidationTask(
+open class TypeScriptValidationTask
+@Inject
+constructor(
     @Internal
     @Transient
     override val compilation: KotlinJsCompilation
@@ -37,7 +36,7 @@ class TypeScriptValidationTask(
     override val requiredNpmDependencies: Set<RequiredKotlinJsDependency>
         get() = setOf(nodeJs.versions.typeScript)
 
-    @Incremental
+    @SkipWhenEmpty
     @InputDirectory
     lateinit var inputDir: File
 
@@ -45,7 +44,7 @@ class TypeScriptValidationTask(
     var validationStrategy: KotlinIrJsGeneratedTSValidationStrategy = KotlinIrJsGeneratedTSValidationStrategy.IGNORE
 
     private val generatedDts
-        get() = inputDir.listFiles { file -> file.extension == ".ts" }
+        get() = inputDir.listFiles { file -> file.extension == "ts" }
 
     @TaskAction
     fun run() {

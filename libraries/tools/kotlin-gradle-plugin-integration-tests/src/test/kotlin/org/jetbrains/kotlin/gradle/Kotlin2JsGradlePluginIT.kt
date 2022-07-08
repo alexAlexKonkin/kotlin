@@ -33,9 +33,7 @@ import java.nio.file.Paths
 import java.util.zip.ZipFile
 import kotlin.io.path.*
 import kotlin.streams.toList
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
+import kotlin.test.*
 
 @JsGradlePluginTests
 class Kotlin2JsIrGradlePluginIT : AbstractKotlin2JsGradlePluginIT(true) {
@@ -249,6 +247,41 @@ class Kotlin2JsIrGradlePluginIT : AbstractKotlin2JsGradlePluginIT(true) {
 
             build("build") {
                 assertFileInProjectNotExists("build/js/packages/kotlin-js-nodejs/kotlin/")
+            }
+        }
+    }
+
+    @DisplayName("generated typescript declarations validation")
+    @GradleTest
+    fun testGeneratedTypeScriptDeclarationsValidation(gradleVersion: GradleVersion) {
+        project("js-ir-validate-ts", gradleVersion) {
+            buildGradleKts.appendText(
+                """
+                |fun makeTypeScriptFileInvalid() {
+                |  val dts = projectDir.resolve("build/js/packages/js-ir-validate-ts/kotlin/js-ir-validate-ts.d.ts")
+                |  dts.appendText("\nlet invalidCode: unique symbol = Symbol()")
+                |}
+                |
+                |tasks.named<Copy>("developmentExecutableCompileSync").configure {
+                |   doLast { makeTypeScriptFileInvalid() }
+                |}
+                |
+                |tasks.named<Copy>("productionExecutableCompileSync").configure {
+                |   doLast { makeTypeScriptFileInvalid() }
+                |}
+               """.trimMargin()
+            )
+
+            buildAndFail("compileDevelopmentExecutableKotlinJs") {
+                assertTasksFailed(":developmentExecutableValidateGeneratedByCompilerTypeScript")
+                assertFileInProjectExists("build/js/packages/js-ir-validate-ts/kotlin/js-ir-validate-ts.js")
+                assertFileInProjectExists("build/js/packages/js-ir-validate-ts/kotlin/js-ir-validate-ts.d.ts")
+            }
+
+            build("compileProductionExecutableKotlinJs") {
+                assertTasksExecuted(":productionExecutableValidateGeneratedByCompilerTypeScript")
+                assertFileInProjectExists("build/js/packages/js-ir-validate-ts/kotlin/js-ir-validate-ts.js")
+                assertFileInProjectExists("build/js/packages/js-ir-validate-ts/kotlin/js-ir-validate-ts.d.ts")
             }
         }
     }
