@@ -137,7 +137,7 @@ constructor(
     private fun registerCompileSync(binary: JsIrBinary, tsValidationTask: TaskProvider<*>?): TaskProvider<Copy> {
         val compilation = binary.compilation
         val npmProject = compilation.npmProject
-        return project.registerTask(
+        return project.registerTask<Copy>(
             binary.linkSyncTaskName
         ) { task ->
             task.from(
@@ -178,11 +178,11 @@ constructor(
             null
         } else {
             project.registerTask(binary.validateGeneratedTsTaskName, listOf(compilation)) {
-                it.inputDir = npmProject.dist
-                it.validationStrategy = when (binary.mode) {
+                it.inputDir.set(npmProject.dist)
+                it.validationStrategy.set(when (binary.mode) {
                     KotlinJsBinaryMode.DEVELOPMENT -> propertiesProvider.jsIrGeneratedTypeScriptValidationDevStrategy
                     KotlinJsBinaryMode.PRODUCTION -> propertiesProvider.jsIrGeneratedTypeScriptValidationProdStrategy
-                }
+                })
             }
         }
     }

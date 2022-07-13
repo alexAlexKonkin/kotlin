@@ -7,6 +7,8 @@ package org.jetbrains.kotlin.gradle.targets.js.typescript
 
 import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.*
+import org.gradle.api.provider.Property
+import org.gradle.api.file.DirectoryProperty
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinJsCompilation
 import org.jetbrains.kotlin.gradle.targets.js.RequiredKotlinJsDependency
 import org.jetbrains.kotlin.gradle.targets.js.ir.KotlinIrJsGeneratedTSValidationStrategy
@@ -16,7 +18,8 @@ import org.jetbrains.kotlin.gradle.targets.js.npm.npmProject
 import java.io.File
 import javax.inject.Inject
 
-open class TypeScriptValidationTask
+@CacheableTask
+abstract class TypeScriptValidationTask
 @Inject
 constructor(
     @Internal
@@ -36,19 +39,22 @@ constructor(
     override val requiredNpmDependencies: Set<RequiredKotlinJsDependency>
         get() = setOf(nodeJs.versions.typeScript)
 
-    @SkipWhenEmpty
-    @InputDirectory
-    lateinit var inputDir: File
+    @get:SkipWhenEmpty
+    @get:InputDirectory
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val inputDir: DirectoryProperty
 
-    @Input
-    var validationStrategy: KotlinIrJsGeneratedTSValidationStrategy = KotlinIrJsGeneratedTSValidationStrategy.IGNORE
+    @get:Input
+    abstract val validationStrategy: Property<KotlinIrJsGeneratedTSValidationStrategy>
 
     private val generatedDts
-        get() = inputDir.listFiles { file -> file.extension == "ts" }
+        get() = inputDir.getAsFileTree().matching { it.include("*.d.ts") }.files
 
     @TaskAction
     fun run() {
         nodeJs.npmResolutionManager.checkRequiredDependencies(this, services, logger, project.path)
+
+        val validationStrategy = validationStrategy.get()
 
         if (validationStrategy == KotlinIrJsGeneratedTSValidationStrategy.IGNORE) return
 
