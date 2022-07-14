@@ -15,7 +15,6 @@ import org.jetbrains.kotlin.gradle.targets.js.ir.KotlinIrJsGeneratedTSValidation
 import org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsRootPlugin
 import org.jetbrains.kotlin.gradle.targets.js.npm.RequiresNpmDependencies
 import org.jetbrains.kotlin.gradle.targets.js.npm.npmProject
-import java.io.File
 import javax.inject.Inject
 
 @CacheableTask
@@ -48,7 +47,7 @@ constructor(
     abstract val validationStrategy: Property<KotlinIrJsGeneratedTSValidationStrategy>
 
     private val generatedDts
-        get() = inputDir.getAsFileTree().matching { it.include("*.d.ts") }.files
+        get() = inputDir.asFileTree.matching { it.include("*.d.ts") }.files
 
     @TaskAction
     fun run() {

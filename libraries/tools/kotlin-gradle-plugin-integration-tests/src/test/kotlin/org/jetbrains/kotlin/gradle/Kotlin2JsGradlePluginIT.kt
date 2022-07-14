@@ -257,17 +257,17 @@ class Kotlin2JsIrGradlePluginIT : AbstractKotlin2JsGradlePluginIT(true) {
         project("js-ir-validate-ts", gradleVersion) {
             buildGradleKts.appendText(
                 """
-                |fun makeTypeScriptFileInvalid() {
-                |  val dts = projectDir.resolve("build/js/packages/js-ir-validate-ts/kotlin/js-ir-validate-ts.d.ts")
+                |fun makeTypeScriptFileInvalid(mode: String) {
+                |  val dts = projectDir.resolve("build/compileSync/main/" + mode + "Executable/kotlin/js-ir-validate-ts.d.ts")
                 |  dts.appendText("\nlet invalidCode: unique symbol = Symbol()")
                 |}
                 |
-                |tasks.named<Copy>("developmentExecutableCompileSync").configure {
-                |   doLast { makeTypeScriptFileInvalid() }
+                |tasks.named<org.jetbrains.kotlin.gradle.targets.js.ir.KotlinJsIrLink>("compileDevelopmentExecutableKotlinJs").configure {
+                |   doLast { makeTypeScriptFileInvalid("development") }
                 |}
                 |
-                |tasks.named<Copy>("productionExecutableCompileSync").configure {
-                |   doLast { makeTypeScriptFileInvalid() }
+                |tasks.named<org.jetbrains.kotlin.gradle.targets.js.ir.KotlinJsIrLink>("compileProductionExecutableKotlinJs").configure {
+                |   doLast { makeTypeScriptFileInvalid("production") }
                 |}
                """.trimMargin()
             )
