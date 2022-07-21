@@ -227,7 +227,6 @@ class LlvmOptimizationPipeline(
         config.inlineThreshold?.let { threshold ->
             LLVMPassManagerBuilderUseInlinerWithThreshold(passBuilder, threshold)
         }
-        LLVMAddAlwaysInlinerPass(modulePasses)
 
         // Pipeline that is similar to `llvm-lto`.
         LLVMPassManagerBuilderPopulateLTOPassManager(passBuilder, modulePasses, Internalize = 0, RunInliner = 1)

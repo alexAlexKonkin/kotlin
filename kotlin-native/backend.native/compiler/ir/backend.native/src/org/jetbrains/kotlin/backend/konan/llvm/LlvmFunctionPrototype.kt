@@ -191,10 +191,10 @@ private fun mustNotInline(context: Context, irFunction: IrFunction): Boolean {
 }
 
 
-private fun isNonNullableUnboxFunction(context: Context, irFunction: IrFunction): Boolean =
-        irFunction.origin == DECLARATION_ORIGIN_INLINE_CLASS_SPECIAL_FUNCTION &&
-                irFunction.returnType != context.irBuiltIns.anyType &&
-                !irFunction.returnType.isNullable()
+private fun IrFunction.isNonNullableUnboxFunction(context: Context): Boolean =
+        origin == DECLARATION_ORIGIN_INLINE_CLASS_SPECIAL_FUNCTION &&
+                returnType != context.irBuiltIns.anyType &&
+                !returnType.isNullable()
 
 private fun inferFunctionAttributes(contextUtils: ContextUtils, irFunction: IrFunction): List<LlvmFunctionAttribute> =
         mutableListOf<LlvmFunctionAttribute>().apply {
@@ -205,7 +205,7 @@ private fun inferFunctionAttributes(contextUtils: ContextUtils, irFunction: IrFu
             if (mustNotInline(contextUtils.context, irFunction)) {
                 add(LlvmFunctionAttribute.NoInline)
             }
-            if (isNonNullableUnboxFunction(contextUtils.context, irFunction)) {
+            if (irFunction.isNonNullableUnboxFunction(contextUtils.context)) {
                 add(LlvmFunctionAttribute.AlwaysInline)
             }
         }
