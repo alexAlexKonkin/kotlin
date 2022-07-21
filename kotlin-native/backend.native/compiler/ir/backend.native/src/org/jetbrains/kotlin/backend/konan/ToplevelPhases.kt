@@ -531,6 +531,7 @@ internal val bitcodePhase = NamedCompilerPhase(
                                                  // from dependencies can be changed during lowerings.
                 inlineClassPropertyAccessorsPhase then
                 redundantCoercionsCleaningPhase then
+                unboxInlinePhase then
                 createLLVMDeclarationsPhase then
                 ghaPhase then
                 RTTIPhase then
@@ -640,6 +641,7 @@ internal fun PhaseConfig.konanPhasesConfig(config: KonanConfig) {
         // Inline accessors only in optimized builds due to separate compilation and possibility to get broken
         // debug information.
         disableUnless(propertyAccessorInlinePhase, config.optimizationsEnabled)
+        disableUnless(unboxInlinePhase, config.optimizationsEnabled)
         disableUnless(inlineClassPropertyAccessorsPhase, config.optimizationsEnabled)
         disableUnless(dcePhase, config.optimizationsEnabled)
         disableUnless(removeRedundantCallsToFileInitializersPhase, config.optimizationsEnabled)

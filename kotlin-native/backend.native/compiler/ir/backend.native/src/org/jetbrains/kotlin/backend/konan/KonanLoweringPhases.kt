@@ -10,8 +10,10 @@ import org.jetbrains.kotlin.backend.common.lower.inline.LocalClassesInInlineLamb
 import org.jetbrains.kotlin.backend.common.lower.loops.ForLoopsLowering
 import org.jetbrains.kotlin.backend.common.lower.optimizations.FoldConstantLowering
 import org.jetbrains.kotlin.backend.common.lower.optimizations.PropertyAccessorInlineLowering
+import org.jetbrains.kotlin.backend.konan.lower.UnboxInlineLowering
 import org.jetbrains.kotlin.backend.common.phaser.*
 import org.jetbrains.kotlin.backend.konan.ir.FunctionsWithoutBoundCheckGenerator
+import org.jetbrains.kotlin.backend.konan.llvm.redundantCoercionsCleaningPhase
 import org.jetbrains.kotlin.backend.konan.lower.*
 import org.jetbrains.kotlin.backend.konan.lower.InitializersLowering
 import org.jetbrains.kotlin.backend.konan.optimizations.KonanBCEForLoopBodyTransformer
@@ -90,6 +92,13 @@ internal val propertyAccessorInlinePhase = makeKonanModuleLoweringPhase(
         ::PropertyAccessorInlineLowering,
         name = "PropertyAccessorInline",
         description = "Property accessor inline lowering"
+)
+
+internal val unboxInlinePhase = makeKonanModuleLoweringPhase(
+        ::UnboxInlineLowering,
+        name = "UnboxInline",
+        description = "Unbox functions inline lowering",
+//        prerequisite = setOf(redundantCoercionsCleaningPhase)
 )
 
 /* IrFile phases */
