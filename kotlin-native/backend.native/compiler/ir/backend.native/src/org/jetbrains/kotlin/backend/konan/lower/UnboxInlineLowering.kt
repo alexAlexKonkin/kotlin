@@ -24,11 +24,11 @@ internal class UnboxInlineLowering(
         private val context: CommonBackendContext,
 ) : BodyLoweringPass {
 
-    private inner class AccessorInliner(val container: IrDeclaration) : IrElementTransformerVoid() {
+    private inner class AccessorInliner : IrElementTransformerVoid() {
 
         private val anyType = context.irBuiltIns.anyType
 
-        private fun IrFunction.unboxCanBeInlined(): Boolean =
+        private fun IrFunction.isEasyInlineableUnbox(): Boolean =
                 origin == DECLARATION_ORIGIN_INLINE_CLASS_SPECIAL_FUNCTION &&
                         returnType != anyType &&
                         !returnType.isNullable()
@@ -36,7 +36,7 @@ internal class UnboxInlineLowering(
         override fun visitCall(expression: IrCall): IrExpression {
             expression.transformChildrenVoid(this)
 
-            return if (expression.symbol.owner.unboxCanBeInlined())
+            return if (expression.symbol.owner.isEasyInlineableUnbox())
                 tryInlineUnbox(expression)
             else expression
         }
@@ -63,6 +63,6 @@ internal class UnboxInlineLowering(
     }
 
     override fun lower(irBody: IrBody, container: IrDeclaration) {
-        irBody.transformChildrenVoid(AccessorInliner(container))
+        irBody.transformChildrenVoid(AccessorInliner())
     }
 }
