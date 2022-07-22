@@ -58,6 +58,8 @@ class FirKLibSerializerExtension(
     override val session: FirSession,
     override val metadataVersion: BinaryVersion,
     override val stringTable: FirElementAwareSerializableStringTable
-) : FirSerializerExtension()
+) : FirSerializerExtension() {
+    override fun shouldSerializeFunction(function: FirFunction): Boolean = true
+}
 
 class FirElementAwareSerializableStringTable() : FirElementAwareStringTable, SerializableStringTable()
