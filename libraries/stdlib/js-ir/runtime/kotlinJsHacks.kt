@@ -5,6 +5,8 @@
 
 package kotlin.js
 
+import kotlin.reflect.KClass
+
 @PublishedApi
 internal fun <T : Enum<T>> enumValuesIntrinsic(): Array<T> =
     throw IllegalStateException("Should be replaced by compiler")
@@ -43,3 +45,9 @@ internal fun safePropertySet(self: dynamic, setterName: String, propName: String
  */
 @Target(AnnotationTarget.FUNCTION, AnnotationTarget.PROPERTY_GETTER, AnnotationTarget.PROPERTY_SETTER)
 internal annotation class JsFun(val code: String)
+
+@Target(AnnotationTarget.CLASS)
+internal annotation class JsSubtypeCheckable(vararg val implements: KClass<*>)
+
+@Target(AnnotationTarget.CLASS)
+internal annotation class JsReflectedClass

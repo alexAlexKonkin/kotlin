@@ -47,6 +47,17 @@ class UselessDeclarationsRemover(
         if (removeUnusedAssociatedObjects && declaration.annotations.any { !it.shouldKeepAnnotation() }) {
             declaration.annotations = declaration.annotations.filter { it.shouldKeepAnnotation() }
         }
+
+        if (!declaration.isInterface) {
+            val jsSubtypeCheckableAnnotation = declaration.annotations.findAnnotation(JsAnnotations.JsSubtypeCheckableFqn) ?: return
+            val interfacesReferencesVararg = jsSubtypeCheckableAnnotation.getValueArgument(0) as IrVararg
+            interfacesReferencesVararg.elements.removeIf { it is IrClassReference && it.symbol.owner !in usefulDeclarations }
+
+            if (interfacesReferencesVararg.elements.isEmpty()) {
+                declaration.annotations = declaration.annotations.filter { it !== jsSubtypeCheckableAnnotation }
+            }
+        }
+
     }
 
     // TODO bring back the primary constructor fix

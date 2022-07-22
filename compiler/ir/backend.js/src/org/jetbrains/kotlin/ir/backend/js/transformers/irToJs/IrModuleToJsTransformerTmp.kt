@@ -79,7 +79,6 @@ class IrModuleToJsTransformerTmp(
 
     fun generateModule(modules: Iterable<IrModuleFragment>, modes: Set<TranslationMode>): CompilerResult {
         val exportModelGenerator = ExportModelGenerator(backendContext, generateNamespacesForPackages = true)
-
         val exportData = modules.associate { module ->
             module to module.files.associate { file ->
                 file to exportModelGenerator.generateExportWithExternals(file)

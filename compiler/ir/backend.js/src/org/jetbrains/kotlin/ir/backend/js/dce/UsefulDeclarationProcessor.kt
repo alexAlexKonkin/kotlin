@@ -12,6 +12,7 @@ import org.jetbrains.kotlin.ir.backend.js.utils.isAssociatedObjectAnnotatedAnnot
 import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.expressions.*
 import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
+import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.types.classifierOrNull
 import org.jetbrains.kotlin.ir.util.*
 import org.jetbrains.kotlin.ir.visitors.IrElementVisitor
@@ -131,9 +132,7 @@ abstract class UsefulDeclarationProcessor(
     protected open fun processField(irField: IrField): Unit = Unit
 
     protected open fun processClass(irClass: IrClass) {
-        irClass.superTypes.forEach {
-            (it.classifierOrNull as? IrClassSymbol)?.owner?.enqueue(irClass, "superTypes")
-        }
+        processSuperTypes(irClass.superTypes, irClass)
 
         if (irClass.isObject && isExported(irClass)) {
             context.mapping.objectToGetInstanceFunction[irClass]
@@ -146,6 +145,12 @@ abstract class UsefulDeclarationProcessor(
                 classesWithObjectAssociations += irClass
                 annotationClass.enqueue(irClass, "@AssociatedObject annotated annotation class")
             }
+        }
+    }
+
+    protected open fun processSuperTypes(superTypes: List<IrType>, irClass: IrClass) {
+        superTypes.forEach {
+            (it.classifierOrNull as? IrClassSymbol)?.owner?.enqueue(irClass, "superTypes")
         }
     }
 

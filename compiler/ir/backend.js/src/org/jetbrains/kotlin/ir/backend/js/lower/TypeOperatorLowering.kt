@@ -12,6 +12,7 @@ import org.jetbrains.kotlin.ir.IrStatement
 import org.jetbrains.kotlin.ir.backend.js.JsIrBackendContext
 import org.jetbrains.kotlin.ir.backend.js.ir.JsIrArithBuilder
 import org.jetbrains.kotlin.ir.backend.js.ir.JsIrBuilder
+import org.jetbrains.kotlin.ir.backend.js.utils.isJsReflectedClass
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrDeclaration
 import org.jetbrains.kotlin.ir.declarations.IrDeclarationBase
@@ -46,6 +47,7 @@ class TypeOperatorLowering(val context: JsIrBackendContext) : BodyLoweringPass {
     private val eqeq = context.irBuiltIns.eqeqSymbol
 
     private val isInterfaceSymbol get() = context.intrinsics.isInterfaceSymbol
+    private val getInterfaceIdSymbol get() = context.intrinsics.getInterfaceIdSymbol
     private val isArraySymbol get() = context.intrinsics.isArraySymbol
     private val isSuspendFunctionSymbol = context.intrinsics.isSuspendFunctionSymbol
 
@@ -353,9 +355,16 @@ class TypeOperatorLowering(val context: JsIrBackendContext) : BodyLoweringPass {
             }
 
             private fun generateInterfaceCheck(argument: IrExpression, toType: IrType): IrExpression {
-                val irType = wrapTypeReference(toType)
+                var irType = wrapTypeReference(toType)
                 return JsIrBuilder.buildCall(isInterfaceSymbol).apply {
                     putValueArgument(0, argument)
+
+                    val interfaceDeclaration = toType.classifierOrNull?.owner as? IrClass
+
+                    if (interfaceDeclaration?.isJsReflectedClass() == true) {
+                        irType = JsIrBuilder.buildCall(getInterfaceIdSymbol).apply { putValueArgument(0, irType) }
+                    }
+
                     putValueArgument(1, irType)
                 }
             }

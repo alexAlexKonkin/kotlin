@@ -9,17 +9,11 @@ import org.jetbrains.kotlin.ir.backend.js.JsIrBackendContext
 import org.jetbrains.kotlin.ir.backend.js.JsStatementOrigins
 import org.jetbrains.kotlin.ir.backend.js.export.isExported
 import org.jetbrains.kotlin.ir.backend.js.lower.isBuiltInClass
-import org.jetbrains.kotlin.ir.backend.js.utils.associatedObject
-import org.jetbrains.kotlin.ir.backend.js.utils.getJsName
-import org.jetbrains.kotlin.ir.backend.js.utils.getJsNameOrKotlinName
-import org.jetbrains.kotlin.ir.backend.js.utils.invokeFunForLambda
+import org.jetbrains.kotlin.ir.backend.js.utils.*
 import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
-import org.jetbrains.kotlin.ir.types.classOrNull
-import org.jetbrains.kotlin.ir.types.classifierOrFail
-import org.jetbrains.kotlin.ir.types.classifierOrNull
-import org.jetbrains.kotlin.ir.types.getClass
+import org.jetbrains.kotlin.ir.types.*
 import org.jetbrains.kotlin.ir.util.*
 
 internal class JsUsefulDeclarationProcessor(
@@ -30,9 +24,16 @@ internal class JsUsefulDeclarationProcessor(
 
     private val equalsMethod = getMethodOfAny("equals")
     private val hashCodeMethod = getMethodOfAny("hashCode")
+    private val subtypeCheckableIntrinsic = context.intrinsics.jsSubtypeCheckableAnnotationSymbol.constructors.single()
 
     override val bodyVisitor: BodyVisitorBase = object : BodyVisitorBase() {
         override fun visitCall(expression: IrCall, data: IrDeclaration) {
+            // We need to prevent subtypeCheckableIntrinsic arguments to be added inside useful declarations
+            // to remove not so useful interfaces, because the annotation contains whole hierarchy
+            if (expression.symbol === subtypeCheckableIntrinsic) {
+                return
+            }
+
             super.visitCall(expression, data)
             when (expression.symbol) {
                 context.intrinsics.jsBoxIntrinsic -> {
@@ -111,20 +112,40 @@ internal class JsUsefulDeclarationProcessor(
         }
     }
 
+    override fun processSuperTypes(superTypes: List<IrType>, irClass: IrClass) {
+        superTypes.forEach {
+            if (!it.isInterface()) {
+                (it.classifierOrNull as? IrClassSymbol)?.owner?.enqueue(irClass, "superTypes")
+            }
+        }
+    }
+
     override fun processClass(irClass: IrClass) {
         super.processClass(irClass)
 
-        if (irClass.containsMetadata()) {
+        if (irClass in result && irClass.containsMetadata()) {
+            val allImplementedInterfaces = irClass.getJsSubtypeCheckableInterfaces() ?: emptyList()
+
+            if (allImplementedInterfaces.any { it.symbol.owner in result }) {
+                context.intrinsics.bitMaskSymbol.constructors.single().owner.enqueue(irClass, "interface metadata")
+                context.intrinsics.generateInterfaceIdSymbol.owner.enqueue(irClass, "interface metadata")
+            }
+
             when {
-                irClass.isInterface -> context.intrinsics.metadataInterfaceConstructorSymbol.owner.enqueue(irClass, "interface metadata")
                 irClass.isObject -> context.intrinsics.metadataObjectConstructorSymbol.owner.enqueue(irClass, "object metadata")
+                irClass.isJsReflectedClass() -> {
+                    context.intrinsics.metadataInterfaceConstructorSymbol.owner.enqueue(irClass, "interface metadata")
+                    context.intrinsics.getInterfaceIdSymbol.owner.enqueue(irClass, "interface metadata")
+                    context.intrinsics.generateInterfaceIdSymbol.owner.enqueue(irClass, "interface metadata")
+                }
+
                 else -> context.intrinsics.metadataClassConstructorSymbol.owner.enqueue(irClass, "class metadata")
             }
         }
     }
 
     private fun IrClass.containsMetadata(): Boolean =
-        !isExternal && !isExpect &&  !isBuiltInClass(this)
+        !isExternal && !isExpect && !isBuiltInClass(this)
 
     override fun processConstructedClassDeclaration(declaration: IrDeclaration) {
         if (declaration in result) return

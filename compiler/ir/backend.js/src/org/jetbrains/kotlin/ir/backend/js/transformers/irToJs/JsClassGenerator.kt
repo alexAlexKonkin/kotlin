@@ -6,14 +6,21 @@
 package org.jetbrains.kotlin.ir.backend.js.transformers.irToJs
 
 import org.jetbrains.kotlin.backend.common.compilationException
+import org.jetbrains.kotlin.backend.common.lower.createIrBuilder
 import org.jetbrains.kotlin.descriptors.DescriptorVisibilities
 import org.jetbrains.kotlin.descriptors.Modality
+import org.jetbrains.kotlin.ir.UNDEFINED_OFFSET
 import org.jetbrains.kotlin.ir.backend.js.JsIrBackendContext
 import org.jetbrains.kotlin.ir.backend.js.export.isAllowedFakeOverriddenDeclaration
 import org.jetbrains.kotlin.ir.backend.js.export.isExported
 import org.jetbrains.kotlin.ir.backend.js.export.isOverriddenExported
 import org.jetbrains.kotlin.ir.backend.js.utils.*
+import org.jetbrains.kotlin.ir.builders.irCall
 import org.jetbrains.kotlin.ir.declarations.*
+import org.jetbrains.kotlin.ir.expressions.IrClassReference
+import org.jetbrains.kotlin.ir.expressions.IrExpression
+import org.jetbrains.kotlin.ir.expressions.impl.IrGetObjectValueImpl
+import org.jetbrains.kotlin.ir.expressions.impl.IrVarargImpl
 import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
 import org.jetbrains.kotlin.ir.symbols.IrClassifierSymbol
 import org.jetbrains.kotlin.ir.types.IrType
@@ -24,11 +31,12 @@ import org.jetbrains.kotlin.ir.util.*
 import org.jetbrains.kotlin.js.backend.ast.*
 import org.jetbrains.kotlin.js.common.isValidES5Identifier
 import org.jetbrains.kotlin.utils.addIfNotNull
+import org.jetbrains.kotlin.utils.addToStdlib.runIf
 
 class JsClassGenerator(private val irClass: IrClass, val context: JsGenerationContext) {
-
     private val className = context.getNameForClass(irClass)
     private val classNameRef = className.makeRef()
+    private val shouldBeRepresentedAsSingleVariable = irClass.isInterface && !irClass.isJsReflectedClass()
     private val baseClass: IrType? = irClass.superTypes.firstOrNull { !it.classifierOrFail.isInterface }
 
     private val baseClassRef by lazy { // Lazy in case was not collected by namer during JsClassGenerator construction
@@ -43,7 +51,8 @@ class JsClassGenerator(private val irClass: IrClass, val context: JsGenerationCo
     fun generate(): JsStatement {
         assert(!irClass.isExpect)
 
-        if (!es6mode) maybeGeneratePrimaryConstructor()
+        if (!es6mode && !shouldBeRepresentedAsSingleVariable) maybeGeneratePrimaryConstructor()
+
         val transformer = IrDeclarationToJsTransformer()
 
         // Properties might be lowered out of classes
@@ -72,7 +81,7 @@ class JsClassGenerator(private val irClass: IrClass, val context: JsGenerationCo
                                 jsClass.constructor = it
                             }
                         }
-                    } else {
+                    } else if (!shouldBeRepresentedAsSingleVariable) {
                         classBlock.statements += declaration.accept(transformer, context)
                         classModel.preDeclarationBlock.statements += generateInheritanceCode()
                     }
@@ -104,7 +113,12 @@ class JsClassGenerator(private val irClass: IrClass, val context: JsGenerationCo
             }
         }
 
-        classBlock.statements += generateClassMetadata()
+        if (shouldBeRepresentedAsSingleVariable) {
+            classBlock.statements += generateInterfaceDeclaration()
+        } else {
+            classBlock.statements += generateClassMetadata()
+            classBlock.statements += generateInterfacesMetadata()
+        }
 
         if (!irClass.isInterface) {
             for (property in properties) {
@@ -206,8 +220,24 @@ class JsClassGenerator(private val irClass: IrClass, val context: JsGenerationCo
                 }
             }
         }
+
         context.staticContext.classModels[irClass.symbol] = classModel
+
         return classBlock
+    }
+
+    private fun generateInterfaceId(): JsExpression? {
+        return runIf(irClass.isInterface) {
+            (generateInterfaceDeclaration() as? JsVars)?.vars?.single()?.initExpression
+        }
+    }
+
+    private fun generateInterfaceDeclaration(): JsStatement {
+        val backendContext = context.staticContext.backendContext
+        val generateInterfaceId = backendContext.intrinsics.generateInterfaceIdSymbol
+        val generateInterfaceIdCall = backendContext.createIrBuilder(irClass.symbol).irCall(generateInterfaceId)
+
+        return jsVar(className, generateInterfaceIdCall, context)
     }
 
     private inline fun IrSimpleFunction?.getOrGenerateIfFinal(generateFunc: IrSimpleFunction.() -> JsFunction?): JsExpression? {
@@ -323,6 +353,43 @@ class JsClassGenerator(private val irClass: IrClass, val context: JsGenerationCo
         return listOf(createCall, ctorAssign)
     }
 
+    private fun generateInterfacesMetadata(): List<JsStatement> {
+        val backendContext = context.staticContext.backendContext
+        val subtypeCheckableInterfaces = irClass.takeIf { !it.isInterface }?.getJsSubtypeCheckableInterfaces() ?: return emptyList()
+        val bitMaskClassConstructor = backendContext.intrinsics.bitMaskSymbol.constructors.single()
+
+        val bitMaskCall = backendContext.createIrBuilder(irClass.symbol).irCall(bitMaskClassConstructor).apply {
+            val listOfInterfacesIds = IrVarargImpl(
+                UNDEFINED_OFFSET,
+                UNDEFINED_OFFSET,
+                backendContext.dynamicType,
+                backendContext.dynamicType,
+                subtypeCheckableInterfaces.map { it.asInterfaceId() }
+            )
+
+            putValueArgument(0, listOfInterfacesIds)
+        }
+
+        val bitMaskJsCall = bitMaskCall.accept(IrElementToJsExpressionTransformer(), context)
+        val metadataAssignment = jsAssignment(JsNameRef(Namer.INTERFACES_MASK, classPrototypeRef), bitMaskJsCall)
+
+        return listOf(metadataAssignment.makeStmt())
+    }
+
+    private fun IrClassReference.asInterfaceId(): IrExpression {
+        val backendContext = context.staticContext.backendContext
+        val objectValue = IrGetObjectValueImpl(startOffset, endOffset, type, symbol as IrClassSymbol)
+        val owner = symbol.owner as IrClass
+
+        return if (!owner.isJsReflectedClass()) {
+            objectValue
+        } else {
+            backendContext.createIrBuilder(symbol).irCall(backendContext.intrinsics.getInterfaceIdSymbol).apply {
+                putValueArgument(0, objectValue)
+            }
+        }
+    }
+
     private fun generateClassMetadata(): JsStatement {
         val metadataConstructor = with(context.staticContext.backendContext.intrinsics) {
             when {
@@ -336,15 +403,15 @@ class JsClassGenerator(private val irClass: IrClass, val context: JsGenerationCo
             .takeIf { !it.isSpecial }
             ?.let { JsStringLiteral(it.identifier) }
 
-        val interfaces = generateSuperClasses()
+        val iid = generateInterfaceId()
         val associatedObjectKey = generateAssociatedObjectKey()
         val associatedObjects = generateAssociatedObjects()
-        val fastPrototype = generateFastPrototype()
         val suspendArity = generateSuspendArity()
 
         val constructorCall = JsInvocation(
             JsNameRef(context.getNameForStaticFunction(metadataConstructor.owner)),
-            listOf(simpleName, interfaces, associatedObjectKey, associatedObjects, suspendArity, fastPrototype)
+            mutableListOf(simpleName, iid, associatedObjectKey, associatedObjects, suspendArity)
+                .also { if (!irClass.isInterface) it.removeAt(1) }
                 .dropLastWhile { it == null }
                 .map { it ?: Namer.JS_UNDEFINED }
         )
@@ -364,28 +431,6 @@ class JsClassGenerator(private val irClass: IrClass, val context: JsGenerationCo
 
         return JsArrayLiteral(arity)
     }
-
-    private fun generateSuperClasses(): JsArrayLiteral? {
-        val parentSymbols = irClass.superTypes.mapNotNull {
-            val symbol = it.classifierOrFail as IrClassSymbol
-            val isFunctionType = it.isFunctionType()
-            // TODO: make sure that there is a test which breaks when isExternal is used here instead of isEffectivelyExternal
-            val requireInMetadata = if (context.staticContext.backendContext.baseClassIntoMetadata)
-                !it.isAny()
-            else
-                symbol.isInterface
-
-            if (requireInMetadata && !isFunctionType && !symbol.isEffectivelyExternal) {
-                symbol
-            } else null
-        }
-
-        return parentSymbols
-            .takeIf { it.isNotEmpty() }
-            ?.run { JsArrayLiteral(map { JsNameRef(context.getNameForClass(it.owner)) }) }
-    }
-
-    private fun generateFastPrototype() = baseClassRef?.let { prototypeOf(it) }
 
     private fun IrType.isFunctionType() = isFunctionOrKFunction() || isSuspendFunctionOrKFunction()
 

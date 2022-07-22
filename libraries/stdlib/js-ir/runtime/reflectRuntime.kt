@@ -24,27 +24,28 @@ private fun getPropertyRefClass(obj: Ctor, metadata: Metadata): dynamic {
     return obj;
 }
 
+@Suppress("UNUSED_PARAMETER")
 private fun getKPropMetadata(paramCount: Int, setter: Any?, type: dynamic): dynamic {
     val mdata: Metadata = propertyRefClassMetadataCache[paramCount][if (setter == null) 0 else 1]
 
-    if (mdata.interfaces.size == 0) {
-        mdata.interfaces.asDynamic().push(type)
-
-        if (mdata.interfacesCache == null) {
-            mdata.interfacesCache = generateInterfaceCache()
-        } else {
-            mdata.interfacesCache!!.isComplete = false
-        }
-
-        mdata.interfacesCache!!.extendCacheWithSingle(type)
-    }
+//    if (mdata.interfaces.size == 0) {
+//        mdata.interfaces.asDynamic().push(type)
+//
+//        if (mdata.interfacesCache == null) {
+//            mdata.interfacesCache = generateInterfaceCache()
+//        } else {
+//            mdata.interfacesCache!!.isComplete = false
+//        }
+//
+//        mdata.interfacesCache!!.extendCacheWithSingle(type)
+//    }
 
     return mdata
 }
 
 private fun metadataObject(): Metadata {
     val undef = js("undefined")
-    return classMeta(undef, undef, undef, undef, undef, undef)
+    return classMeta(undef, undef, undef, undef)
 }
 
 private val propertyRefClassMetadataCache: Array<Array<dynamic>> = arrayOf<Array<dynamic>>(
