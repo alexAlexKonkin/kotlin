@@ -52,12 +52,10 @@ internal class UnboxInlineLowering(
                     val field = retVal.symbol.owner
                     context.createIrBuilder(call.symbol, call.startOffset, call.endOffset).irGetField(call.getValueArgument(0), field)
                 } else {
-                    println("Cannot inline unbox function ${call.symbol} with body `IrReturn(expression)`, where `expression` is not IrGetField(...)")
                     context.log { "Cannot inline unbox function ${call.symbol} with body `IrReturn(expression)`, where `expression` is not IrGetField(...)" }
                     call
                 }
             } else {
-                println("Cannot inline unbox function ${call.symbol} with body which is not IrReturn(IrGetField(...))")
                 context.log { "Cannot inline unbox function ${call.symbol} with body which is not IrReturn(IrGetField(...))" }
                 call
             }
