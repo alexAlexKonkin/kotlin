@@ -94,13 +94,6 @@ internal val propertyAccessorInlinePhase = makeKonanModuleLoweringPhase(
         description = "Property accessor inline lowering"
 )
 
-internal val unboxInlinePhase = makeKonanModuleLoweringPhase(
-        ::UnboxInlineLowering,
-        name = "UnboxInline",
-        description = "Unbox functions inline lowering",
-//        prerequisite = setOf(redundantCoercionsCleaningPhase)
-)
-
 /* IrFile phases */
 
 internal val removeExpectDeclarationsPhase = makeKonanFileLoweringPhase(
@@ -415,6 +408,13 @@ internal val autoboxPhase = makeKonanFileLoweringPhase(
         name = "Autobox",
         description = "Autoboxing of primitive types",
         prerequisite = setOf(bridgesPhase, coroutinesPhase)
+)
+
+internal val unboxInlinePhase = makeKonanModuleLoweringPhase(
+        ::UnboxInlineLowering,
+        name = "UnboxInline",
+        description = "Unbox functions inline lowering",
+        prerequisite = setOf(autoboxPhase, redundantCoercionsCleaningPhase)
 )
 
 internal val expressionBodyTransformPhase = makeKonanFileLoweringPhase(

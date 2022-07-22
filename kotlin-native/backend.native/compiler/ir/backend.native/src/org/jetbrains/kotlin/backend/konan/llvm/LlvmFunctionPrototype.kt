@@ -9,15 +9,13 @@ import kotlinx.cinterop.allocArray
 import kotlinx.cinterop.get
 import kotlinx.cinterop.memScoped
 import llvm.*
-import org.jetbrains.kotlin.backend.konan.*
 import org.jetbrains.kotlin.backend.konan.Context
-import org.jetbrains.kotlin.backend.konan.DECLARATION_ORIGIN_INLINE_CLASS_SPECIAL_FUNCTION
+import org.jetbrains.kotlin.backend.konan.RuntimeNames
 import org.jetbrains.kotlin.backend.konan.ir.llvmSymbolOrigin
 import org.jetbrains.kotlin.descriptors.konan.CompiledKlibModuleOrigin
 import org.jetbrains.kotlin.ir.declarations.IrConstructor
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.types.isNothing
-import org.jetbrains.kotlin.ir.types.isNullable
 import org.jetbrains.kotlin.ir.util.hasAnnotation
 import org.jetbrains.kotlin.ir.util.isSuspend
 import org.jetbrains.kotlin.ir.util.isThrowable
@@ -190,12 +188,6 @@ private fun mustNotInline(context: Context, irFunction: IrFunction): Boolean {
     return false
 }
 
-
-private fun IrFunction.isNonNullableUnboxFunction(context: Context): Boolean =
-        origin == DECLARATION_ORIGIN_INLINE_CLASS_SPECIAL_FUNCTION &&
-                returnType != context.irBuiltIns.anyType &&
-                !returnType.isNullable()
-
 private fun inferFunctionAttributes(contextUtils: ContextUtils, irFunction: IrFunction): List<LlvmFunctionAttribute> =
         mutableListOf<LlvmFunctionAttribute>().apply {
             // suspend function can return value in case of COROUTINE_SUSPENDED.
@@ -204,8 +196,5 @@ private fun inferFunctionAttributes(contextUtils: ContextUtils, irFunction: IrFu
             }
             if (mustNotInline(contextUtils.context, irFunction)) {
                 add(LlvmFunctionAttribute.NoInline)
-            }
-            if (irFunction.isNonNullableUnboxFunction(contextUtils.context)) {
-                add(LlvmFunctionAttribute.AlwaysInline)
             }
         }
