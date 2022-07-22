@@ -123,10 +123,8 @@ internal class JsUsefulDeclarationProcessor(
     override fun processClass(irClass: IrClass) {
         super.processClass(irClass)
 
-        if (irClass in result && irClass.containsMetadata()) {
-            val allImplementedInterfaces = irClass.getJsSubtypeCheckableInterfaces() ?: emptyList()
-
-            if (allImplementedInterfaces.any { it.symbol.owner in result }) {
+        if (irClass.containsMetadata()) {
+            if (!irClass.getJsSubtypeCheckableInterfaces().isNullOrEmpty()) {
                 context.intrinsics.bitMaskSymbol.constructors.single().owner.enqueue(irClass, "interface metadata")
                 context.intrinsics.generateInterfaceIdSymbol.owner.enqueue(irClass, "interface metadata")
             }
