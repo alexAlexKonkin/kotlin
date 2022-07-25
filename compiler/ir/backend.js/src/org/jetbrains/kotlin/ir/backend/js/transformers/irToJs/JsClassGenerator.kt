@@ -114,15 +114,11 @@ class JsClassGenerator(private val irClass: IrClass, val context: JsGenerationCo
         }
 
         if (irClass.isInterface) {
-            when {
-                irClass.isJsReflectedClass() -> {
-                    classBlock.statements += generateClassMetadata()
-                    classBlock.statements += generateInterfacesMetadata()
-                }
-
-                irClass.isJsSubtypeCheckable() -> {
-                    classBlock.statements += generateInterfaceDeclaration()
-                }
+            if (irClass.isJsReflectedClass()) {
+                classBlock.statements += generateClassMetadata()
+                classBlock.statements += generateInterfacesMetadata()
+            } else {
+                classBlock.statements += generateInterfaceDeclaration()
             }
         } else {
             for (property in properties) {
