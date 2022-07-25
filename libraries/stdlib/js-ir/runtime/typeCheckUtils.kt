@@ -53,6 +53,7 @@ internal external interface Metadata {
 internal external interface Ctor {
     var `$metadata$`: Metadata?
     var constructor: Ctor?
+    var prototype: dynamic
 }
 
 private var iid: Int? = null
@@ -190,7 +191,7 @@ internal fun isComparable(value: dynamic): Boolean {
 internal fun isCharSequence(value: dynamic): Boolean =
     jsTypeOf(value) == "string" || isInterface(value, getInterfaceIdInRuntime(jsClassIntrinsic<CharSequence>()))
 
-private fun getInterfaceIdInRuntime(klass: dynamic): Int {
+internal fun getInterfaceIdInRuntime(klass: dynamic): Int {
     return if (klass is Int) klass else getInterfaceId(klass)
 }
 

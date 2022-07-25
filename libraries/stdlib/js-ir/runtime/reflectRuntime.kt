@@ -11,36 +11,30 @@ internal fun getPropertyCallableRef(name: String, paramCount: Int, type: dynamic
     getter.get = getter
     getter.set = setter
     getter.callableName = name
-    return getPropertyRefClass(getter, getKPropMetadata(paramCount, setter, type)).unsafeCast<KProperty<*>>()
+    return getPropertyRefClass(
+        getter,
+        getKPropMetadata(paramCount, setter),
+        getInterfaceMaskFor(getter, type)
+    ).unsafeCast<KProperty<*>>()
 }
 
 internal fun getLocalDelegateReference(name: String, type: dynamic, mutable: Boolean, lambda: dynamic): KProperty<*> {
     return getPropertyCallableRef(name, 0, type, lambda, if (mutable) lambda else null)
 }
 
-private fun getPropertyRefClass(obj: Ctor, metadata: Metadata): dynamic {
+private fun getPropertyRefClass(obj: Ctor, metadata: Metadata, imask: BitMask): dynamic {
     obj.`$metadata$` = metadata;
     obj.constructor = obj;
+    obj.prototype.`$imask$` = imask
     return obj;
 }
 
+private fun getInterfaceMaskFor(obj: Ctor, type: dynamic): BitMask =
+    obj.prototype.`$imask$` ?: BitMask(getInterfaceIdInRuntime(type))
+
 @Suppress("UNUSED_PARAMETER")
 private fun getKPropMetadata(paramCount: Int, setter: Any?, type: dynamic): dynamic {
-    val mdata: Metadata = propertyRefClassMetadataCache[paramCount][if (setter == null) 0 else 1]
-
-//    if (mdata.interfaces.size == 0) {
-//        mdata.interfaces.asDynamic().push(type)
-//
-//        if (mdata.interfacesCache == null) {
-//            mdata.interfacesCache = generateInterfaceCache()
-//        } else {
-//            mdata.interfacesCache!!.isComplete = false
-//        }
-//
-//        mdata.interfacesCache!!.extendCacheWithSingle(type)
-//    }
-
-    return mdata
+    return propertyRefClassMetadataCache[paramCount][if (setter == null) 0 else 1]
 }
 
 private fun metadataObject(): Metadata {
