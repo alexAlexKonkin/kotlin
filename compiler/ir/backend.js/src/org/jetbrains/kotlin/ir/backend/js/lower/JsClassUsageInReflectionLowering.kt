@@ -15,6 +15,7 @@ import org.jetbrains.kotlin.ir.expressions.*
 import org.jetbrains.kotlin.ir.expressions.impl.IrConstImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrDynamicMemberExpressionImpl
 import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
+import org.jetbrains.kotlin.ir.util.defaultType
 import org.jetbrains.kotlin.ir.util.fqNameWhenAvailable
 import org.jetbrains.kotlin.ir.visitors.IrElementTransformerVoid
 import org.jetbrains.kotlin.ir.visitors.transformChildrenVoid
@@ -48,7 +49,11 @@ class JsClassUsageInReflectionLowering(val backendContext: JsIrBackendContext) :
                     JsIrBuilder.buildCall(intrinsics.jsCode).apply {
                         putValueArgument(0, IrConstImpl.string(UNDEFINED_OFFSET, UNDEFINED_OFFSET, irBuiltIns.stringType, "Object"))
                     }
-                else -> JsIrBuilder.buildGetObjectValue(backendContext.irBuiltIns.anyType, classSymbol)
+
+                else ->
+                    JsIrBuilder.buildCall(intrinsics.jsClass).apply {
+                        putTypeArgument(0, classSymbol.owner.defaultType)
+                    }
             }
         }
     }

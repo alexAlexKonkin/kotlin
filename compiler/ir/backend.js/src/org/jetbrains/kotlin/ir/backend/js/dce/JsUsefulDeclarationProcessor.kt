@@ -33,16 +33,6 @@ internal class JsUsefulDeclarationProcessor(
     private val hashCodeMethod = getMethodOfAny("hashCode")
 
     override val bodyVisitor: BodyVisitorBase = object : BodyVisitorBase() {
-        override fun visitGetObjectValue(expression: IrGetObjectValue, data: IrDeclaration) {
-            super.visitGetObjectValue(expression, data)
-            with(expression.symbol.owner) {
-                if (!isExternal) {
-                    referencedJsClasses += this
-                    constructors.forEach { it.enqueue(data, "intrinsic: jsClass (constructor)") }
-                }
-            }
-        }
-
         override fun visitCall(expression: IrCall, data: IrDeclaration) {
             super.visitCall(expression, data)
             when (expression.symbol) {

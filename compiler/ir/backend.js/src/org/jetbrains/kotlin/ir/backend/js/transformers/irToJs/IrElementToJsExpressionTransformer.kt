@@ -129,9 +129,8 @@ class IrElementToJsExpressionTransformer : BaseIrElementToJsNodeTransformer<JsEx
     override fun visitGetObjectValue(expression: IrGetObjectValue, context: JsGenerationContext): JsExpression {
         val obj = expression.symbol.owner
 
-        // Seems like it's a good way to use class as an object without creating of tmp variable
-        // assert(obj.kind == ClassKind.OBJECT)
-        // assert(obj.isEffectivelyExternal()) { "Non external IrGetObjectValue must be lowered" }
+         assert(obj.kind == ClassKind.OBJECT)
+         assert(obj.isEffectivelyExternal()) { "Non external IrGetObjectValue must be lowered" }
 
         return context.getRefForExternalClass(obj).withSource(expression, context)
     }
