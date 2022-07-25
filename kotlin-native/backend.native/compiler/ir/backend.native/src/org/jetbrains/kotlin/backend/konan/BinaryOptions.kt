@@ -37,6 +37,8 @@ object BinaryOptions : BinaryOptionRegistry() {
     val bundleVersion by stringOption()
 
     val appStateTracking by option<AppStateTracking>()
+
+    val sanitizer by option<SanitizerType>()
 }
 
 open class BinaryOption<T : Any>(

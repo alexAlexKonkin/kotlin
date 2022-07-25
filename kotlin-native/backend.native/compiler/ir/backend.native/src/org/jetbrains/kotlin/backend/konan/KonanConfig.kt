@@ -60,6 +60,7 @@ class KonanConfig(val project: Project, val configuration: CompilerConfiguration
             ?: target.family.isAppleFamily // Default is true for Apple targets.
     val generateDebugTrampoline = debug && configuration.get(KonanConfigKeys.GENERATE_DEBUG_TRAMPOLINE) ?: false
     val optimizationsEnabled = configuration.getBoolean(KonanConfigKeys.OPTIMIZATION)
+    val sanitizer = configuration.get(BinaryOptions.sanitizer) ?: SanitizerType.NONE
 
     private val defaultMemoryModel get() =
         if (target.supportsThreads()) {
@@ -226,7 +227,9 @@ class KonanConfig(val project: Project, val configuration: CompilerConfiguration
     private val shouldCoverLibraries = !configuration.getList(KonanConfigKeys.LIBRARIES_TO_COVER).isNullOrEmpty()
 
     private val defaultAllocationMode get() = when {
-        memoryModel == MemoryModel.EXPERIMENTAL && target.supportsMimallocAllocator() -> AllocationMode.MIMALLOC
+        memoryModel == MemoryModel.EXPERIMENTAL && target.supportsMimallocAllocator() && sanitizer == SanitizerType.NONE -> {
+            AllocationMode.MIMALLOC
+        }
         else -> AllocationMode.STD
     }
 
@@ -364,6 +367,7 @@ class KonanConfig(val project: Project, val configuration: CompilerConfiguration
             }
             freezing != defaultFreezing -> "with ${freezing.name.replaceFirstChar { it.lowercase() }} freezing mode"
             runtimeAssertsMode != RuntimeAssertsMode.IGNORE -> "with runtime assertions"
+            sanitizer != SanitizerType.NONE -> "with sanitizers enabled"
             else -> null
         }
         CacheSupport(

@@ -53,6 +53,7 @@ data class LlvmPipelineConfig(
         val makeDeclarationsHidden: Boolean,
         val objCPasses: Boolean,
         val inlineThreshold: Int?,
+        val sanitizer: SanitizerType,
 )
 
 private fun getCpuModel(context: Context): String {
@@ -100,7 +101,8 @@ internal fun createLTOPipelineConfigForRuntime(context: Context): LlvmPipelineCo
             internalize = false,
             objCPasses = configurables is AppleConfigurables,
             makeDeclarationsHidden = false,
-            inlineThreshold = tryGetInlineThreshold(context)
+            inlineThreshold = tryGetInlineThreshold(context),
+            sanitizer = SanitizerType.NONE
     )
 }
 
@@ -171,6 +173,7 @@ internal fun createLTOFinalPipelineConfig(context: Context): LlvmPipelineConfig 
             makeDeclarationsHidden,
             objcPasses,
             inlineThreshold,
+            context.config.sanitizer
     )
 }
 
@@ -237,6 +240,16 @@ class LlvmOptimizationPipeline(
             // from cinterop "glue" bitcode.
             // TODO: Consider adding other ObjC passes.
             LLVMAddObjCARCContractPass(modulePasses)
+        }
+
+        when (config.sanitizer) {
+            SanitizerType.NONE -> {}
+            SanitizerType.THREAD -> {
+                getFunctions(llvmModule)
+                        .filter { LLVMIsDeclaration(it) == 0 }
+                        .forEach { addLlvmFunctionEnumAttribute(it, LlvmFunctionAttribute.SanitizeThread) }
+                LLVMAddThreadSanitizerPass(modulePasses)
+            }
         }
     }
 
