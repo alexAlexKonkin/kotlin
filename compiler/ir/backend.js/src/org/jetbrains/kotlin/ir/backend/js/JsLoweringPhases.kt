@@ -812,12 +812,6 @@ private val collectClassesForInstanceCheckLowering = makeDeclarationTransformerP
     prerequisite = setOf(collectInterfacesForInstanceCheckLowering)
 )
 
-private val assignIdsToCheckableInterfaces = makeCustomJsModulePhase(
-    { context, module -> validationCallback(context, module) },
-    name = "ValidateIrAfterLowering",
-    description = "Validate IR after lowering"
-).toModuleLowering()
-
 private val cleanupLoweringPhase = makeBodyLoweringPhase(
     { CleanupLowering() },
     name = "CleanupLowering",
