@@ -380,14 +380,19 @@ class JsClassGenerator(private val irClass: IrClass, val context: JsGenerationCo
 
     private fun IrClassReference.asInterfaceId(): IrExpression {
         val backendContext = context.staticContext.backendContext
-        val objectValue = IrGetObjectValueImpl(startOffset, endOffset, type, symbol as IrClassSymbol)
+        val builder = backendContext.createIrBuilder(symbol)
+
         val owner = symbol.owner as IrClass
 
+        val jsClassReference = builder.irCall(backendContext.intrinsics.jsClass).apply {
+            putTypeArgument(0, owner.defaultType)
+        }
+
         return if (!owner.isJsReflectedClass()) {
-            objectValue
+            jsClassReference
         } else {
-            backendContext.createIrBuilder(symbol).irCall(backendContext.intrinsics.getInterfaceIdSymbol).apply {
-                putValueArgument(0, objectValue)
+            builder.irCall(backendContext.intrinsics.getInterfaceIdSymbol).apply {
+                putValueArgument(0, jsClassReference)
             }
         }
     }

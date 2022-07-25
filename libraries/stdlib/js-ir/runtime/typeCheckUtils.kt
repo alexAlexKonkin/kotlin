@@ -136,7 +136,6 @@ internal fun isFloatArray(a: dynamic): Boolean = jsInstanceOf(a, js("Float32Arra
 internal fun isDoubleArray(a: dynamic): Boolean = jsInstanceOf(a, js("Float64Array"))
 internal fun isLongArray(a: dynamic): Boolean = isJsArray(a) && a.`$type$` === "LongArray"
 
-
 internal fun jsGetPrototypeOf(jsClass: dynamic) = js("Object").getPrototypeOf(jsClass)
 
 internal fun jsIsType(obj: dynamic, jsClass: dynamic): Boolean {
@@ -177,18 +176,23 @@ internal fun jsIsType(obj: dynamic, jsClass: dynamic): Boolean {
 
 internal fun isNumber(a: dynamic) = jsTypeOf(a) == "number" || a is Long
 
+@OptIn(JsIntrinsic::class)
 internal fun isComparable(value: dynamic): Boolean {
     var type = jsTypeOf(value)
 
     return type == "string" ||
             type == "boolean" ||
             isNumber(value) ||
-            value is Comparable<*>
+            isInterface(value, getInterfaceIdInRuntime(jsClassIntrinsic<Comparable<*>>()))
 }
 
+@OptIn(JsIntrinsic::class)
 internal fun isCharSequence(value: dynamic): Boolean =
-    jsTypeOf(value) == "string" || value is CharSequence
+    jsTypeOf(value) == "string" || isInterface(value, getInterfaceIdInRuntime(jsClassIntrinsic<CharSequence>()))
 
+private fun getInterfaceIdInRuntime(klass: dynamic): Int {
+    return if (klass is Int) klass else getInterfaceId(klass)
+}
 
 internal fun getInterfaceId(intfc: dynamic): Int =
     intfc.`$metadata$`.iid.unsafeCast<Int>()
