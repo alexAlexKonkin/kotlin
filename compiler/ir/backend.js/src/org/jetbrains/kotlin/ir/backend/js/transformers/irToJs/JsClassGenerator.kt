@@ -223,6 +223,8 @@ class JsClassGenerator(private val irClass: IrClass, val context: JsGenerationCo
                     )
                 }
             }
+
+            classBlock.statements += generateClassMetadata()
         }
 
         context.staticContext.classModels[irClass.symbol] = classModel
