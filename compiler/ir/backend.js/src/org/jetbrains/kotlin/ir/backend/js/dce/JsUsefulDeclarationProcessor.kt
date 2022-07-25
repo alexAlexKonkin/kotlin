@@ -36,6 +36,9 @@ internal class JsUsefulDeclarationProcessor(
 
             super.visitCall(expression, data)
             when (expression.symbol) {
+                context.kpropertyBuilder -> {
+                    context.intrinsics.generateInterfaceIdSymbol.owner.enqueue(data, "property reference needs reflect interfaces")
+                }
                 context.intrinsics.jsBoxIntrinsic -> {
                     val inlineClass = context.inlineClassesUtils.getInlinedClass(expression.getTypeArgument(0)!!)!!
                     val constructor = inlineClass.declarations.filterIsInstance<IrConstructor>().single { it.isPrimary }
@@ -139,6 +142,14 @@ internal class JsUsefulDeclarationProcessor(
 
                 else -> context.intrinsics.metadataClassConstructorSymbol.owner.enqueue(irClass, "class metadata")
             }
+        }
+    }
+
+    override fun processSimpleFunction(irFunction: IrSimpleFunction) {
+        super.processSimpleFunction(irFunction)
+
+        if (irFunction.isReal && irFunction.body != null) {
+            irFunction.parentClassOrNull?.takeIf { it.isInterface }?.enqueue(irFunction, "interface default method is used")
         }
     }
 

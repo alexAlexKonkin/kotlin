@@ -36,8 +36,8 @@ import org.jetbrains.kotlin.utils.addToStdlib.runIf
 class JsClassGenerator(private val irClass: IrClass, val context: JsGenerationContext) {
     private val className = context.getNameForClass(irClass)
     private val classNameRef = className.makeRef()
-    private val shouldBeRepresentedAsSingleVariable = irClass.isInterface && !irClass.isJsReflectedClass()
     private val baseClass: IrType? = irClass.superTypes.firstOrNull { !it.classifierOrFail.isInterface }
+    private val shouldGenerateConstructor = !irClass.isInterface || irClass.isJsReflectedClass()
 
     private val baseClassRef by lazy { // Lazy in case was not collected by namer during JsClassGenerator construction
         if (baseClass != null && !baseClass.isAny()) baseClass.getClassRef(context) else null
@@ -51,7 +51,7 @@ class JsClassGenerator(private val irClass: IrClass, val context: JsGenerationCo
     fun generate(): JsStatement {
         assert(!irClass.isExpect)
 
-        if (!es6mode && !shouldBeRepresentedAsSingleVariable) maybeGeneratePrimaryConstructor()
+        if (!es6mode && shouldGenerateConstructor) maybeGeneratePrimaryConstructor()
 
         val transformer = IrDeclarationToJsTransformer()
 
@@ -81,7 +81,7 @@ class JsClassGenerator(private val irClass: IrClass, val context: JsGenerationCo
                                 jsClass.constructor = it
                             }
                         }
-                    } else if (!shouldBeRepresentedAsSingleVariable) {
+                    } else if (shouldGenerateConstructor) {
                         classBlock.statements += declaration.accept(transformer, context)
                         classModel.preDeclarationBlock.statements += generateInheritanceCode()
                     }
@@ -113,14 +113,18 @@ class JsClassGenerator(private val irClass: IrClass, val context: JsGenerationCo
             }
         }
 
-        if (shouldBeRepresentedAsSingleVariable) {
-            classBlock.statements += generateInterfaceDeclaration()
-        } else {
-            classBlock.statements += generateClassMetadata()
-            classBlock.statements += generateInterfacesMetadata()
-        }
+        if (irClass.isInterface) {
+            when {
+                irClass.isJsReflectedClass() -> {
+                    classBlock.statements += generateClassMetadata()
+                    classBlock.statements += generateInterfacesMetadata()
+                }
 
-        if (!irClass.isInterface) {
+                irClass.isJsSubtypeCheckable() -> {
+                    classBlock.statements += generateInterfaceDeclaration()
+                }
+            }
+        } else {
             for (property in properties) {
                 if (property.getter?.extensionReceiverParameter != null || property.setter?.extensionReceiverParameter != null)
                     continue
