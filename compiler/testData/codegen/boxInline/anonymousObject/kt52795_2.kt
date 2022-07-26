@@ -1,10 +1,16 @@
 // NO_CHECK_LAMBDA_INLINING
+// IGNORE_BACKEND: JVM
+// IGNORE_BACKEND_MULTI_MODULE: JVM
+
+import java.lang.IllegalStateException
+
 // FILE: 1.kt
 inline fun <T> mrun(block: () -> T) = block()
 inline fun <T> mrunTwice(block: () -> T) : T {
     val first = block()
     val second = block()
-    require(first!!::class == second!!::class)
+    if (first!!::class != second!!::class)
+        throw IllegalStateException("${first!!::class} != ${second!!::class}")
     return first
 }
 
