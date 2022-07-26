@@ -9,6 +9,7 @@ import org.jetbrains.kotlin.backend.common.BodyLoweringPass
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.UNDEFINED_OFFSET
 import org.jetbrains.kotlin.ir.backend.js.JsIrBackendContext
+import org.jetbrains.kotlin.ir.backend.js.JsStatementOrigins
 import org.jetbrains.kotlin.ir.backend.js.ir.JsIrBuilder
 import org.jetbrains.kotlin.ir.declarations.IrDeclaration
 import org.jetbrains.kotlin.ir.expressions.*
@@ -47,11 +48,19 @@ class JsClassUsageInReflectionLowering(val backendContext: JsIrBackendContext) :
                 irBuiltIns.nothingClass -> null
                 irBuiltIns.anyClass ->
                     JsIrBuilder.buildCall(intrinsics.jsCode).apply {
-                        putValueArgument(0, IrConstImpl.string(UNDEFINED_OFFSET, UNDEFINED_OFFSET, irBuiltIns.stringType, "Object"))
+                        putValueArgument(
+                            0,
+                            IrConstImpl.string(
+                                UNDEFINED_OFFSET,
+                                UNDEFINED_OFFSET,
+                                irBuiltIns.stringType,
+                         "Object"
+                            )
+                        )
                     }
 
                 else ->
-                    JsIrBuilder.buildCall(intrinsics.jsClass).apply {
+                    JsIrBuilder.buildCall(intrinsics.jsClass, origin = JsStatementOrigins.CLASS_REFERENCE).apply {
                         putTypeArgument(0, classSymbol.owner.defaultType)
                     }
             }
