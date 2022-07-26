@@ -60,6 +60,8 @@ class FirKLibSerializerExtension(
     override val stringTable: FirElementAwareSerializableStringTable
 ) : FirSerializerExtension() {
     override fun shouldSerializeFunction(function: FirFunction): Boolean = true
+
+    override fun shouldSerializeProperty(property: FirProperty): Boolean = true
 }
 
 class FirElementAwareSerializableStringTable() : FirElementAwareStringTable, SerializableStringTable()
