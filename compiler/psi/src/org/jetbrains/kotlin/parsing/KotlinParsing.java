@@ -25,6 +25,7 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.kotlin.lexer.KtKeywordToken;
+import org.jetbrains.kotlin.lexer.KtToken;
 import org.jetbrains.kotlin.lexer.KtTokens;
 
 import static org.jetbrains.kotlin.KtNodeTypes.*;
@@ -37,27 +38,15 @@ public class KotlinParsing extends AbstractKotlinParsing {
     private static final TokenSet GT_COMMA_COLON_SET = TokenSet.create(GT, COMMA, COLON);
     private static final Logger LOG = Logger.getInstance(KotlinParsing.class);
 
-    private static final TokenSet TOP_LEVEL_DECLARATION_FIRST = TokenSet.create(
+    public static final TokenSet TOP_LEVEL_DECLARATION_FIRST = TokenSet.create(
             TYPE_ALIAS_KEYWORD, INTERFACE_KEYWORD, CLASS_KEYWORD, OBJECT_KEYWORD,
             FUN_KEYWORD, VAL_KEYWORD, PACKAGE_KEYWORD);
-    private static final @NotNull TokenSet TOP_LEVEL_DECLARATION_FIRST_SEMICOLON_SET =
-            TokenSet.orSet(TOP_LEVEL_DECLARATION_FIRST, TokenSet.create(SEMICOLON));
-    private static final @NotNull TokenSet LT_EQ_SEMICOLON_TOP_LEVEL_DECLARATION_FIRST_SET =
-            TokenSet.orSet(TokenSet.create(LT, EQ, SEMICOLON), TOP_LEVEL_DECLARATION_FIRST);
-    private static final TokenSet DECLARATION_FIRST = TokenSet.orSet(TOP_LEVEL_DECLARATION_FIRST,
-                                                                     TokenSet.create(INIT_KEYWORD, GET_KEYWORD, SET_KEYWORD, CONSTRUCTOR_KEYWORD));
-
-    private static final TokenSet CLASS_NAME_RECOVERY_SET = TokenSet.orSet(TokenSet.create(LT, LPAR, COLON, LBRACE),
-                                                                           TOP_LEVEL_DECLARATION_FIRST);
-    private static final TokenSet TYPE_PARAMETER_GT_RECOVERY_SET = TokenSet.create(WHERE_KEYWORD, LPAR, COLON, LBRACE, GT);
+    public static final TokenSet DECLARATION_FIRST = TokenSet.orSet(TOP_LEVEL_DECLARATION_FIRST,
+                                                                    TokenSet.create(INIT_KEYWORD, GET_KEYWORD, SET_KEYWORD, CONSTRUCTOR_KEYWORD));
+    public static final TokenSet TYPE_PARAMETER_GT_RECOVERY_SET = TokenSet.create(WHERE_KEYWORD, LPAR, COLON, LBRACE, GT);
     public static final TokenSet PARAMETER_NAME_RECOVERY_SET = TokenSet.create(COLON, EQ, COMMA, RPAR, VAL_KEYWORD, VAR_KEYWORD);
-    private static final TokenSet PACKAGE_NAME_RECOVERY_SET = TokenSet.create(DOT, EOL_OR_SEMICOLON);
-    private static final TokenSet IMPORT_RECOVERY_SET = TokenSet.create(AS_KEYWORD, DOT, EOL_OR_SEMICOLON);
-    private static final TokenSet TYPE_REF_FIRST = TokenSet.create(LBRACKET, IDENTIFIER, LPAR, HASH, DYNAMIC_KEYWORD);
-    private static final @NotNull TokenSet LBRACE_RBRACE_TYPE_REF_FIRST_SET =
-            TokenSet.orSet(TokenSet.create(LBRACE, RBRACE), TYPE_REF_FIRST);
-    private static final @NotNull TokenSet COLON_COMMA_LBRACE_RBRACE_TYPE_REF_FIRST_SET =
-            TokenSet.orSet(TokenSet.create(COLON, COMMA, LBRACE, RBRACE), TYPE_REF_FIRST);
+    public static final TokenSet PACKAGE_NAME_RECOVERY_SET = TokenSet.create(DOT, EOL_OR_SEMICOLON);
+    public static final TokenSet TYPE_REF_FIRST = TokenSet.create(LBRACKET, IDENTIFIER, LPAR, HASH, DYNAMIC_KEYWORD);
     private static final TokenSet RECEIVER_TYPE_TERMINATORS = TokenSet.create(DOT, SAFE_ACCESS);
     private static final TokenSet VALUE_PARAMETER_FIRST =
             TokenSet.orSet(
@@ -74,28 +63,18 @@ public class KotlinParsing extends AbstractKotlinParsing {
             FILE_KEYWORD, FIELD_KEYWORD, GET_KEYWORD, SET_KEYWORD, PROPERTY_KEYWORD,
             RECEIVER_KEYWORD, PARAM_KEYWORD, SETPARAM_KEYWORD, DELEGATE_KEYWORD);
     private static final @NotNull TokenSet BLOCK_DOC_COMMENT_SET = TokenSet.create(BLOCK_COMMENT, DOC_COMMENT);
-    private static final @NotNull TokenSet SEMICOLON_SET = TokenSet.create(SEMICOLON);
     private static final @NotNull TokenSet COMMA_COLON_GT_SET = TokenSet.create(COMMA, COLON, GT);
-    private static final @NotNull TokenSet IDENTIFIER_RBRACKET_LBRACKET_SET = TokenSet.create(IDENTIFIER, RBRACKET, LBRACKET);
-    private static final @NotNull TokenSet LBRACE_RBRACE_SET = TokenSet.create(LBRACE, RBRACE);
+    public static final @NotNull TokenSet LBRACE_RBRACE_SET = TokenSet.create(LBRACE, RBRACE);
     private static final @NotNull TokenSet COMMA_SEMICOLON_RBRACE_SET = TokenSet.create(COMMA, SEMICOLON, RBRACE);
     private static final @NotNull TokenSet VALUE_ARGS_RECOVERY_SET = TokenSet.create(LBRACE, SEMICOLON, RPAR, EOL_OR_SEMICOLON, RBRACE);
-    private static final @NotNull TokenSet PROPERTY_NAME_FOLLOW_SET =
+    public static final @NotNull TokenSet PROPERTY_NAME_FOLLOW_SET =
       TokenSet.create(COLON, EQ, LBRACE, RBRACE, SEMICOLON, VAL_KEYWORD, VAR_KEYWORD, FUN_KEYWORD, CLASS_KEYWORD);
-    private static final @NotNull TokenSet PROPERTY_NAME_FOLLOW_MULTI_DECLARATION_RECOVERY_SET = TokenSet.orSet(PROPERTY_NAME_FOLLOW_SET, PARAMETER_NAME_RECOVERY_SET);
-    private static final @NotNull TokenSet PROPERTY_NAME_FOLLOW_FUNCTION_OR_PROPERTY_RECOVERY_SET = TokenSet.orSet(PROPERTY_NAME_FOLLOW_SET, LBRACE_RBRACE_SET, TOP_LEVEL_DECLARATION_FIRST);
-    private static final @NotNull TokenSet IDENTIFIER_EQ_COLON_SEMICOLON_SET = TokenSet.create(IDENTIFIER, EQ, COLON, SEMICOLON);
     private static final @NotNull TokenSet COMMA_RPAR_COLON_EQ_SET = TokenSet.create(COMMA, RPAR, COLON, EQ);
     private static final @NotNull TokenSet ACCESSOR_FIRST_OR_PROPERTY_END =
             TokenSet.orSet(MODIFIER_KEYWORDS, TokenSet.create(AT, GET_KEYWORD, SET_KEYWORD, FIELD_KEYWORD, EOL_OR_SEMICOLON, RBRACE));
-    private static final @NotNull TokenSet RPAR_IDENTIFIER_COLON_LBRACE_EQ_SET = TokenSet.create(RPAR, IDENTIFIER, COLON, LBRACE, EQ);
     private static final @NotNull TokenSet COMMA_COLON_RPAR_SET = TokenSet.create(COMMA, COLON, RPAR);
-    private static final @NotNull TokenSet RPAR_COLON_LBRACE_EQ_SET = TokenSet.create(RPAR, COLON, LBRACE, EQ);
-    private static final @NotNull TokenSet LBRACKET_LBRACE_RBRACE_LPAR_SET = TokenSet.create(LBRACKET, LBRACE, RBRACE, LPAR);
     private static final @NotNull TokenSet FUNCTION_NAME_FOLLOW_SET = TokenSet.create(LT, LPAR, RPAR, COLON, EQ);
-    private static final @NotNull TokenSet FUNCTION_NAME_RECOVERY_SET = TokenSet.orSet(TokenSet.create(LT, LPAR, RPAR, COLON, EQ), LBRACE_RBRACE_SET, TOP_LEVEL_DECLARATION_FIRST);
-    private static final @NotNull TokenSet VALUE_PARAMETERS_FOLLOW_SET = TokenSet.create(EQ, LBRACE, RBRACE, SEMICOLON, RPAR);
-    private static final @NotNull TokenSet LPAR_VALUE_PARAMETERS_FOLLOW_SET = TokenSet.orSet(TokenSet.create(LPAR), VALUE_PARAMETERS_FOLLOW_SET);
+    public static final @NotNull TokenSet VALUE_PARAMETERS_FOLLOW_SET = TokenSet.create(EQ, LBRACE, RBRACE, SEMICOLON, RPAR);
     private static final @NotNull TokenSet
             LPAR_LBRACE_COLON_CONSTRUCTOR_KEYWORD_SET = TokenSet.create(LPAR, LBRACE, COLON, CONSTRUCTOR_KEYWORD);
     private static final @NotNull TokenSet definitelyOutOfReceiverSet = TokenSet.orSet(
@@ -306,7 +285,7 @@ public class KotlinParsing extends AbstractKotlinParsing {
             }
 
             PsiBuilder.Marker nsName = mark();
-            boolean simpleNameFound = expect(IDENTIFIER, "Package name must be a '.'-separated identifier list", PACKAGE_NAME_RECOVERY_SET);
+            boolean simpleNameFound = expect(IDENTIFIER, RecoveryMessageType.PackageNameMustBeDotSeparatedIdentifierList);
             if (simpleNameFound) {
                 nsName.done(REFERENCE_EXPRESSION);
             }
@@ -375,7 +354,7 @@ public class KotlinParsing extends AbstractKotlinParsing {
             }
 
             reference = mark();
-            if (expect(IDENTIFIER, "Qualified name must be a '.'-separated identifier list", IMPORT_RECOVERY_SET)) {
+            if (expect(IDENTIFIER, RecoveryMessageType.QualifierNameMustBeDotSeparatedIdentifierList)) {
                 reference.done(REFERENCE_EXPRESSION);
             }
             else {
@@ -410,7 +389,7 @@ public class KotlinParsing extends AbstractKotlinParsing {
             if (closeImportWithErrorIfNewline(importDirective, alias, "Expecting identifier")) {
                 return;
             }
-            expect(IDENTIFIER, "Expecting identifier", SEMICOLON_SET);
+            expect(IDENTIFIER, RecoveryMessageType.ExpectingIdentifierInImportDirective);
             alias.done(IMPORT_ALIAS);
         }
         consumeIf(SEMICOLON);
@@ -833,7 +812,7 @@ public class KotlinParsing extends AbstractKotlinParsing {
             }
         }
 
-        expect(RBRACKET, "Expecting ']' to close the annotation list");
+        expect(RBRACKET, RecoveryMessageType.ExpectingRightBracketToCloseAnnotationList);
         myBuilder.restoreNewlinesState();
 
         annotation.done(ANNOTATION);
@@ -873,18 +852,30 @@ public class KotlinParsing extends AbstractKotlinParsing {
     }
 
     private void parseAnnotationTarget(KtKeywordToken keyword) {
-        String message = "Expecting \"" + keyword.getValue() + COLON.getValue() + "\" prefix for " + keyword.getValue() + " annotations";
-
         PsiBuilder.Marker marker = mark();
 
-        if (!expect(keyword, message)) {
+        if (!expectForAnnotationTarget(keyword, keyword, RecoveryMessageType.MissingKeywordInAnnotationTarget)) {
             marker.drop();
         }
         else {
             marker.done(ANNOTATION_TARGET);
         }
 
-        expect(COLON, message, IDENTIFIER_RBRACKET_LBRACKET_SET);
+        expectForAnnotationTarget(COLON, keyword, RecoveryMessageType.MissingColonInAnnotationTarget);
+    }
+
+    // Duplicate to get rid of String allocating on every expect invoke
+    private boolean expectForAnnotationTarget(KtToken expectation, KtKeywordToken keywordToken, RecoveryMessageType recoveryMessageType) {
+        if (expect(expectation)) {
+            return true;
+        }
+
+        errorWithRecovery(
+                "Expecting \"" + keywordToken.getValue() + COLON.getValue() + "\" prefix for " + keywordToken.getValue() + " annotations",
+                getRecoveryTokenSet(recoveryMessageType)
+        );
+
+        return false;
     }
 
     @Nullable
@@ -1008,7 +999,7 @@ public class KotlinParsing extends AbstractKotlinParsing {
         }
 
         if (nameParsingMode == NameParsingMode.REQUIRED) {
-            expect(IDENTIFIER, "Name expected", CLASS_NAME_RECOVERY_SET);
+            expect(IDENTIFIER, RecoveryMessageType.NameExpectedForClassOrObject);
         }
         else {
             assert object : "Must be an object to be nameless";
@@ -1023,7 +1014,7 @@ public class KotlinParsing extends AbstractKotlinParsing {
             }
         }
 
-        boolean typeParametersDeclared = parseTypeParameterList(TYPE_PARAMETER_GT_RECOVERY_SET);
+        boolean typeParametersDeclared = parseTypeParameterList(RecoveryMessageType.MissingRightAngleBracketInTypeParameterListInClassOrObject);
 
         PsiBuilder.Marker beforeConstructorModifiers = mark();
         PsiBuilder.Marker primaryConstructorMarker = mark();
@@ -1115,7 +1106,7 @@ public class KotlinParsing extends AbstractKotlinParsing {
             error("Expecting ';' after the last enum entry or '}' to close enum class body");
         }
         parseMembers();
-        expect(RBRACE, "Expecting '}' to close enum class body");
+        expect(RBRACE, RecoveryMessageType.ExpectingRightBraceToCloseEnumClassBody);
 
         myBuilder.restoreNewlinesState();
         body.done(CLASS_BODY);
@@ -1225,9 +1216,9 @@ public class KotlinParsing extends AbstractKotlinParsing {
 
         myBuilder.enableNewlines();
 
-        if (expect(LBRACE, "Expecting a class body")) {
+        if (expect(LBRACE, RecoveryMessageType.ExpectingClassBody)) {
             parseMembers();
-            expect(RBRACE, "Missing '}");
+            expect(RBRACE, RecoveryMessageType.MissingRightBrace);
         }
 
         myBuilder.restoreNewlinesState();
@@ -1399,9 +1390,9 @@ public class KotlinParsing extends AbstractKotlinParsing {
 
         advance(); // TYPE_ALIAS_KEYWORD
 
-        expect(IDENTIFIER, "Type name expected", LT_EQ_SEMICOLON_TOP_LEVEL_DECLARATION_FIRST_SET);
+        expect(IDENTIFIER, RecoveryMessageType.TypeNameExpectedInTypeAlias);
 
-        parseTypeParameterList(TYPE_PARAMETER_GT_RECOVERY_SET);
+        parseTypeParameterList(RecoveryMessageType.MissingRightAngleBracketInTypeParameterListInTypeAlias);
 
         if (at(WHERE_KEYWORD)) {
             PsiBuilder.Marker error = mark();
@@ -1409,7 +1400,7 @@ public class KotlinParsing extends AbstractKotlinParsing {
             error.error("Type alias parameters can't have bounds");
         }
 
-        expect(EQ, "Expecting '='", TOP_LEVEL_DECLARATION_FIRST_SEMICOLON_SET);
+        expect(EQ, RecoveryMessageType.ExpectingEqualsInTypeAlias);
 
         parseTypeRef();
 
@@ -1453,7 +1444,7 @@ public class KotlinParsing extends AbstractKotlinParsing {
         assert (at(VAL_KEYWORD) || at(VAR_KEYWORD));
         advance();
 
-        boolean typeParametersDeclared = at(LT) && parseTypeParameterList(IDENTIFIER_EQ_COLON_SEMICOLON_SET);
+        boolean typeParametersDeclared = at(LT) && parseTypeParameterList(RecoveryMessageType.MissingRightAngleBracketInTypeParameterListInProperty);
 
         myBuilder.disableJoiningComplexTokens();
 
@@ -1469,11 +1460,11 @@ public class KotlinParsing extends AbstractKotlinParsing {
 
         if (multiDeclaration) {
             PsiBuilder.Marker multiDecl = mark();
-            parseMultiDeclarationName(PROPERTY_NAME_FOLLOW_SET, PROPERTY_NAME_FOLLOW_MULTI_DECLARATION_RECOVERY_SET);
+            parseMultiDeclarationName(PROPERTY_NAME_FOLLOW_SET, RecoveryMessageType.ExpectingNameInPropertyInMultiDeclaration);
             errorIf(multiDecl, !mode.destructuringAllowed, "Destructuring declarations are only allowed for local variables/values");
         }
         else {
-            parseFunctionOrPropertyName(receiverTypeDeclared, "property", PROPERTY_NAME_FOLLOW_SET, PROPERTY_NAME_FOLLOW_FUNCTION_OR_PROPERTY_RECOVERY_SET, /*nameRequired = */ true);
+            parseFunctionOrPropertyName(receiverTypeDeclared, "property", PROPERTY_NAME_FOLLOW_SET, RecoveryMessageType.ExpectingPropertyName, /*nameRequired = */ true);
         }
 
         myBuilder.restoreJoiningComplexTokensState();
@@ -1562,7 +1553,7 @@ public class KotlinParsing extends AbstractKotlinParsing {
     /*
      * (SimpleName (":" type){","})
      */
-    public void parseMultiDeclarationName(TokenSet follow, TokenSet recoverySet) {
+    public void parseMultiDeclarationName(TokenSet follow, RecoveryMessageType recoveryMessageType) {
         // Parsing multi-name, e.g.
         //   val (a, b) = foo()
         myBuilder.disableNewlines();
@@ -1581,7 +1572,7 @@ public class KotlinParsing extends AbstractKotlinParsing {
 
                 parseModifierList(DEFAULT, COMMA_RPAR_COLON_EQ_SET);
 
-                expect(IDENTIFIER, "Expecting a name", recoverySet);
+                expect(IDENTIFIER, recoveryMessageType);
 
                 if (at(COLON)) {
                     advance(); // COLON
@@ -1595,7 +1586,7 @@ public class KotlinParsing extends AbstractKotlinParsing {
             }
         }
 
-        expect(RPAR, "Expecting ')'", follow);
+        expect(RPAR, RecoveryMessageType.ExpectingRightParenthesisInMultiDeclaration, follow);
         myBuilder.restoreNewlinesState();
     }
 
@@ -1671,12 +1662,12 @@ public class KotlinParsing extends AbstractKotlinParsing {
         myBuilder.disableNewlines();
 
         if (propertyComponentKind != PropertyComponentKind.FIELD) {
-            expect(LPAR, "Expecting '('", RPAR_IDENTIFIER_COLON_LBRACE_EQ_SET);
+            expect(LPAR, RecoveryMessageType.ExpectingLeftParenthesisInPropertyComponent);
             if (propertyComponentKind == PropertyComponentKind.SET) {
                 PsiBuilder.Marker parameterList = mark();
                 PsiBuilder.Marker setterParameter = mark();
                 parseModifierList(DEFAULT, COMMA_COLON_RPAR_SET);
-                expect(IDENTIFIER, "Expecting parameter name", RPAR_COLON_LBRACE_EQ_SET);
+                expect(IDENTIFIER, RecoveryMessageType.ExpectingParameterNameInPropertyComponent);
 
                 if (at(COLON)) {
                     advance(); // COLON
@@ -1750,7 +1741,7 @@ public class KotlinParsing extends AbstractKotlinParsing {
 
         boolean typeParameterListOccurred = false;
         if (at(LT)) {
-            parseTypeParameterList(LBRACKET_LBRACE_RBRACE_LPAR_SET);
+            parseTypeParameterList(RecoveryMessageType.MissingRightAngleBracketInTypeParameterListInFunction1);
             typeParameterListOccurred = true;
         }
 
@@ -1764,13 +1755,13 @@ public class KotlinParsing extends AbstractKotlinParsing {
         }
 
         // function as expression has no name
-        parseFunctionOrPropertyName(receiverFound, "function", FUNCTION_NAME_FOLLOW_SET, FUNCTION_NAME_RECOVERY_SET, /*nameRequired = */ false);
+        parseFunctionOrPropertyName(receiverFound, "function", FUNCTION_NAME_FOLLOW_SET, RecoveryMessageType.ExpectingFunctionName, /*nameRequired = */ false);
 
         myBuilder.restoreJoiningComplexTokensState();
 
         if (at(LT)) {
             PsiBuilder.Marker error = mark();
-            parseTypeParameterList(LPAR_VALUE_PARAMETERS_FOLLOW_SET);
+            parseTypeParameterList(RecoveryMessageType.MissingRightAngleBracketInTypeParameterListInFunction2);
             if (typeParameterListOccurred) {
                 int finishIndex = myBuilder.rawTokenIndex();
                 error.rollbackTo();
@@ -1889,11 +1880,19 @@ public class KotlinParsing extends AbstractKotlinParsing {
     /*
      * IDENTIFIER
      */
-    private boolean parseFunctionOrPropertyName(boolean receiverFound, String title, TokenSet nameFollow, TokenSet recoverySet, boolean nameRequired) {
+    private boolean parseFunctionOrPropertyName(boolean receiverFound, String title, TokenSet nameFollow, RecoveryMessageType recoveryMessageType, boolean nameRequired) {
         if (!nameRequired && atSet(nameFollow)) return true; // no name
 
-        String expectingMessage = "Expecting " + title + " name" + (!receiverFound ? " or receiver type" : "");
-        return expect(IDENTIFIER, expectingMessage, recoverySet);
+        if (expect(IDENTIFIER)) {
+            return true;
+        }
+
+        errorWithRecovery(
+                "Expecting " + title + " name" + (!receiverFound ? " or receiver type" : ""),
+                getRecoveryTokenSet(recoveryMessageType)
+        );
+
+        return false;
     }
 
     /*
@@ -1931,7 +1930,7 @@ public class KotlinParsing extends AbstractKotlinParsing {
 
         myBuilder.enableNewlines();
 
-        boolean hasOpeningBrace = expect(LBRACE, "Expecting '{' to open a block");
+        boolean hasOpeningBrace = expect(LBRACE, RecoveryMessageType.ExpectingLeftBraceToOpenBlock);
         boolean canCollapse = collapse && hasOpeningBrace;
 
         if (canCollapse) {
@@ -1939,7 +1938,7 @@ public class KotlinParsing extends AbstractKotlinParsing {
         }
         else {
             myExpressionParsing.parseStatements();
-            expect(RBRACE, "Expecting '}'");
+            expect(RBRACE, RecoveryMessageType.ExpectingRightBrace);
         }
 
         myBuilder.restoreNewlinesState();
@@ -2028,7 +2027,7 @@ public class KotlinParsing extends AbstractKotlinParsing {
      *   : ("<" typeParameter{","} ">"
      *   ;
      */
-    private boolean parseTypeParameterList(TokenSet recoverySet) {
+    private boolean parseTypeParameterList(RecoveryMessageType recoveryMessageType) {
         boolean result = false;
         if (at(LT)) {
             PsiBuilder.Marker list = mark();
@@ -2047,7 +2046,7 @@ public class KotlinParsing extends AbstractKotlinParsing {
                 }
             }
 
-            expect(GT, "Missing '>'", recoverySet);
+            expect(GT, recoveryMessageType);
             myBuilder.restoreNewlinesState();
             result = true;
 
@@ -2106,14 +2105,14 @@ public class KotlinParsing extends AbstractKotlinParsing {
         parseAnnotations(DEFAULT);
 
         PsiBuilder.Marker reference = mark();
-        if (expect(IDENTIFIER, "Expecting type parameter name", COLON_COMMA_LBRACE_RBRACE_TYPE_REF_FIRST_SET)) {
+        if (expect(IDENTIFIER, RecoveryMessageType.ExpectingTypeParameterName)) {
             reference.done(REFERENCE_EXPRESSION);
         }
         else {
             reference.drop();
         }
 
-        expect(COLON, "Expecting ':' before the upper bound", LBRACE_RBRACE_TYPE_REF_FIRST_SET);
+        expect(COLON, RecoveryMessageType.ExpectingColonBeforeUpperBound);
 
         parseTypeRef();
 
@@ -2143,7 +2142,7 @@ public class KotlinParsing extends AbstractKotlinParsing {
 
         parseModifierList(DEFAULT, GT_COMMA_COLON_SET);
 
-        expect(IDENTIFIER, "Type parameter name expected", TokenSet.EMPTY);
+        expect(IDENTIFIER, RecoveryMessageType.TypeParameterNameExpected);
 
         if (at(COLON)) {
             advance(); // COLON
@@ -2336,15 +2335,14 @@ public class KotlinParsing extends AbstractKotlinParsing {
             PsiBuilder.Marker keyword = mark();
             advance(); // PACKAGE_KEYWORD
             keyword.error("Expecting an element");
-            expect(DOT, "Expecting '.'", TokenSet.create(IDENTIFIER, LBRACE, RBRACE));
+            expect(DOT, RecoveryMessageType.ExpectingDot);
         }
 
         PsiBuilder.Marker reference = mark();
         while (true) {
             recoverOnParenthesizedWordForPlatformTypes(0, "Mutable", true);
 
-            if (expect(IDENTIFIER, "Expecting type name",
-                       TokenSet.orSet(KotlinExpressionParsing.EXPRESSION_FIRST, KotlinExpressionParsing.EXPRESSION_FOLLOW, DECLARATION_FIRST))) {
+            if (expect(IDENTIFIER, RecoveryMessageType.ExpectingTypeName)) {
                 reference.done(REFERENCE_EXPRESSION);
             }
             else {
@@ -2485,7 +2483,7 @@ public class KotlinParsing extends AbstractKotlinParsing {
 
         parseValueParameterList(true, /* typeRequired  = */ true, TokenSet.EMPTY);
 
-        expect(ARROW, "Expecting '->' to specify return type of a function type", TYPE_REF_FIRST);
+        expect(ARROW, RecoveryMessageType.ExpectingArrowToSpecifyReturnTypeOfFunctionalType);
         parseTypeRef();
 
         return functionType;
@@ -2550,7 +2548,7 @@ public class KotlinParsing extends AbstractKotlinParsing {
             }
         }
 
-        expect(RPAR, "Expecting ')'", recoverySet);
+        expect(RPAR, RecoveryMessageType.ExpectingRightParenthesisInValueParameterList, recoverySet);
         myBuilder.restoreNewlinesState();
 
         parameters.done(VALUE_PARAMETER_LIST);
@@ -2609,7 +2607,7 @@ public class KotlinParsing extends AbstractKotlinParsing {
             parseTypeRef();
         }
         else {
-            expect(IDENTIFIER, "Parameter name expected", PARAMETER_NAME_RECOVERY_SET);
+            expect(IDENTIFIER, RecoveryMessageType.ParameterNameExpected);
 
             if (at(COLON)) {
                 advance(); // COLON

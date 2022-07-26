@@ -37,33 +37,23 @@ import java.util.Set;
 import static org.jetbrains.kotlin.KtNodeTypes.*;
 import static org.jetbrains.kotlin.lexer.KtTokens.*;
 import static org.jetbrains.kotlin.parsing.KotlinParsing.AnnotationParsingMode.DEFAULT;
-import static org.jetbrains.kotlin.parsing.KotlinParsing.PARAMETER_NAME_RECOVERY_SET;
 import static org.jetbrains.kotlin.parsing.KotlinWhitespaceAndCommentsBindersKt.PRECEDING_ALL_COMMENTS_BINDER;
 import static org.jetbrains.kotlin.parsing.KotlinWhitespaceAndCommentsBindersKt.TRAILING_ALL_COMMENTS_BINDER;
 
 public class KotlinExpressionParsing extends AbstractKotlinParsing {
-    private static final TokenSet WHEN_CONDITION_RECOVERY_SET = TokenSet.create(RBRACE, IN_KEYWORD, NOT_IN, IS_KEYWORD, NOT_IS, ELSE_KEYWORD);
+    public static final TokenSet WHEN_CONDITION_RECOVERY_SET = TokenSet.create(RBRACE, IN_KEYWORD, NOT_IN, IS_KEYWORD, NOT_IS, ELSE_KEYWORD);
     private static final TokenSet WHEN_CONDITION_RECOVERY_SET_WITH_ARROW = TokenSet.create(RBRACE, IN_KEYWORD, NOT_IN, IS_KEYWORD, NOT_IS, ELSE_KEYWORD, ARROW, DOT);
-
-
     private static final ImmutableMap<String, KtToken> KEYWORD_TEXTS = tokenSetToMap(KEYWORDS);
 
     private static final @NotNull TokenSet LOCAL_DECLARATION_FIRST =
             TokenSet.create(CLASS_KEYWORD, INTERFACE_KEYWORD, FUN_KEYWORD, VAL_KEYWORD, VAR_KEYWORD, TYPE_ALIAS_KEYWORD);
-    private static final TokenSet TOKEN_SET_TO_FOLLOW_AFTER_DESTRUCTURING_DECLARATION_IN_LAMBDA = TokenSet.create(ARROW, COMMA, COLON);
-    private static final TokenSet TOKEN_SET_TO_FOLLOW_AFTER_DESTRUCTURING_DECLARATION_IN_LAMBDA_RECOVERY =
-            TokenSet.orSet(TOKEN_SET_TO_FOLLOW_AFTER_DESTRUCTURING_DECLARATION_IN_LAMBDA, PARAMETER_NAME_RECOVERY_SET);
+    public static final TokenSet TOKEN_SET_TO_FOLLOW_AFTER_DESTRUCTURING_DECLARATION_IN_LAMBDA = TokenSet.create(ARROW, COMMA, COLON);
     private static final @NotNull TokenSet EQ_RPAR_SET = TokenSet.create(EQ, RPAR);
-    private static final @NotNull TokenSet ARROW_SET = TokenSet.create(ARROW);
     private static final @NotNull TokenSet ARROW_COMMA_SET = TokenSet.create(ARROW, COMMA);
     private static final @NotNull TokenSet IN_KEYWORD_R_PAR_COLON_SET = TokenSet.create(IN_KEYWORD, RPAR, COLON);
-    private static final @NotNull TokenSet IN_KEYWORD_L_BRACE_SET = TokenSet.create(IN_KEYWORD, LBRACE);
-    private static final @NotNull TokenSet IN_KEYWORD_L_BRACE_RECOVERY_SET = TokenSet.orSet(IN_KEYWORD_L_BRACE_SET, PARAMETER_NAME_RECOVERY_SET);
-    private static final @NotNull TokenSet COLON_IN_KEYWORD_SET = TokenSet.create(COLON, IN_KEYWORD);
-    private static final @NotNull TokenSet L_PAR_L_BRACE_R_PAR_SET = TokenSet.create(LPAR, LBRACE, RPAR);
+    public static final @NotNull TokenSet IN_KEYWORD_L_BRACE_SET = TokenSet.create(IN_KEYWORD, LBRACE);
     private static final @NotNull TokenSet IN_KEYWORD_SET = TokenSet.create(IN_KEYWORD);
-
-    private static final @NotNull TokenSet TRY_CATCH_RECOVERY_TOKEN_SET = TokenSet.create(LBRACE, RBRACE, FINALLY_KEYWORD, CATCH_KEYWORD);
+    public static final @NotNull TokenSet TRY_CATCH_RECOVERY_TOKEN_SET = TokenSet.create(LBRACE, RBRACE, FINALLY_KEYWORD, CATCH_KEYWORD);
 
     private static ImmutableMap<String, KtToken> tokenSetToMap(TokenSet tokens) {
         ImmutableMap.Builder<String, KtToken> builder = ImmutableMap.builder();
@@ -725,7 +715,7 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
             errorAndAdvance("Expecting '\"'");
         }
         else {
-            expect(CLOSING_QUOTE, "Expecting '\"'");
+            expect(CLOSING_QUOTE, RecoveryMessageType.ExpectingClosingQuote);
         }
         template.done(STRING_TEMPLATE);
     }
@@ -772,7 +762,7 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
                 }
                 else {
                     PsiBuilder.Marker reference = mark();
-                    expect(IDENTIFIER, "Expecting a name");
+                    expect(IDENTIFIER, RecoveryMessageType.ExpectingName);
                     reference.done(REFERENCE_EXPRESSION);
                 }
             }
@@ -874,18 +864,18 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
                 parseExpression();
             }
 
-            expect(RPAR, "Expecting ')'");
+            expect(RPAR, RecoveryMessageType.ExpectingRightParenthesis);
         }
         myBuilder.restoreNewlinesState();
 
         // Parse when block
         myBuilder.enableNewlines();
-        if (expect(LBRACE, "Expecting '{'")) {
+        if (expect(LBRACE, RecoveryMessageType.ExpectingLeftBrace)) {
             while (!eof() && !at(RBRACE)) {
                 parseWhenEntry();
             }
 
-            expect(RBRACE, "Expecting '}'");
+            expect(RBRACE, RecoveryMessageType.ExpectingRightBrace);
         }
         myBuilder.restoreNewlinesState();
 
@@ -948,7 +938,7 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
             }
         }
 
-        expect(ARROW, "Expecting '->'", WHEN_CONDITION_RECOVERY_SET);
+        expect(ARROW, RecoveryMessageType.ExpectingArrow);
         if (atSet(WHEN_CONDITION_RECOVERY_SET)) {
             error("Expecting an element");
         }
@@ -1038,7 +1028,7 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
             parseInnerExpressions(missingElementErrorMessage);
         }
 
-        expect(RBRACKET, "Expecting ']'");
+        expect(RBRACKET, RecoveryMessageType.ExpectingRightBracket);
         myBuilder.restoreNewlinesState();
 
         innerExpressions.done(nodeType);
@@ -1068,12 +1058,12 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
     private void parseContractEffectList() {
         PsiBuilder.Marker block = mark();
 
-        expect(LBRACKET, "Expecting '['");
+        expect(LBRACKET, RecoveryMessageType.ExpectingLeftBracket);
         myBuilder.enableNewlines();
 
         parseContractEffects();
 
-        expect(RBRACKET, "Expecting ']'");
+        expect(RBRACKET, RecoveryMessageType.ExpectingRightBracket);
         myBuilder.restoreNewlinesState();
 
         block.done(CONTRACT_EFFECT_LIST);
@@ -1099,7 +1089,7 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
      */
     public void parseSimpleNameExpression() {
         PsiBuilder.Marker simpleName = mark();
-        expect(IDENTIFIER, "Expecting an identifier");
+        expect(IDENTIFIER, RecoveryMessageType.ExpectingIdentifier);
         simpleName.done(REFERENCE_EXPRESSION);
     }
 
@@ -1169,14 +1159,14 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
             parseFunctionLiteralParameterList();
 
             paramsFound = preferParamsToExpressions ?
-                          rollbackOrDrop(rollbackMarker, ARROW, "An -> is expected", RBRACE) :
+                          rollbackOrDrop(rollbackMarker, ARROW, RecoveryMessageType.ArrowIsExpected, RBRACE) :
                           rollbackOrDropAt(rollbackMarker, ARROW);
         }
 
         if (!paramsFound && preferBlock) {
             literal.drop();
             parseStatements();
-            expect(RBRACE, "Expecting '}'");
+            expect(RBRACE, RecoveryMessageType.ExpectingRightBrace);
             literalExpression.done(BLOCK);
             myBuilder.restoreNewlinesState();
 
@@ -1195,7 +1185,7 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
             body.done(BLOCK);
             body.setCustomEdgeTokenBinders(PRECEDING_ALL_COMMENTS_BINDER, TRAILING_ALL_COMMENTS_BINDER);
 
-            expect(RBRACE, "Expecting '}'");
+            expect(RBRACE, RecoveryMessageType.ExpectingRightBrace);
             literal.done(FUNCTION_LITERAL);
             literalExpression.done(LAMBDA_EXPRESSION);
         }
@@ -1214,8 +1204,7 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
     }
 
     private boolean rollbackOrDrop(PsiBuilder.Marker rollbackMarker,
-            KtToken expected, String expectMessage,
-            IElementType validForDrop) {
+            KtToken expected, RecoveryMessageType recoveryMessageType, IElementType validForDrop) {
         if (at(expected)) {
             advance(); // dropAt
             rollbackMarker.drop();
@@ -1223,7 +1212,7 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
         }
         else if (at(validForDrop)) {
             rollbackMarker.drop();
-            expect(expected, expectMessage);
+            expect(expected, recoveryMessageType);
             return true;
         }
 
@@ -1254,11 +1243,11 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
             else if (at(LPAR)) {
                 PsiBuilder.Marker destructuringDeclaration = mark();
                 myKotlinParsing.parseMultiDeclarationName(TOKEN_SET_TO_FOLLOW_AFTER_DESTRUCTURING_DECLARATION_IN_LAMBDA,
-                                                          TOKEN_SET_TO_FOLLOW_AFTER_DESTRUCTURING_DECLARATION_IN_LAMBDA_RECOVERY);
+                                                          RecoveryMessageType.ExpectingNameInFunctionLiteralParameterListInMultiDeclaration);
                 destructuringDeclaration.done(DESTRUCTURING_DECLARATION);
             }
             else {
-                expect(IDENTIFIER, "Expecting parameter name", ARROW_SET);
+                expect(IDENTIFIER, RecoveryMessageType.ExpectingParameterName);
             }
 
             if (at(COLON)) {
@@ -1427,7 +1416,7 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
             parseLoopBody();
         }
 
-        if (expect(WHILE_KEYWORD, "Expecting 'while' followed by a post-condition")) {
+        if (expect(WHILE_KEYWORD, RecoveryMessageType.ExpectingWhileFollowedByPostCondition)) {
             parseCondition();
         }
 
@@ -1467,7 +1456,7 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
 
         advance(); // FOR_KEYWORD
 
-        if (expect(LPAR, "Expecting '(' to open a loop range", EXPRESSION_FIRST)) {
+        if (expect(LPAR, RecoveryMessageType.ExpectingLeftParenthesisToOpenLoopRange)) {
             myBuilder.disableNewlines();
 
             if (!at(RPAR)) {
@@ -1481,11 +1470,11 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
 
                 if (at(LPAR)) {
                     PsiBuilder.Marker destructuringDeclaration = mark();
-                    myKotlinParsing.parseMultiDeclarationName(IN_KEYWORD_L_BRACE_SET, IN_KEYWORD_L_BRACE_RECOVERY_SET);
+                    myKotlinParsing.parseMultiDeclarationName(IN_KEYWORD_L_BRACE_SET, RecoveryMessageType.ExpectingNameInForInMultiDeclaration);
                     destructuringDeclaration.done(DESTRUCTURING_DECLARATION);
                 }
                 else {
-                    expect(IDENTIFIER, "Expecting a variable name", COLON_IN_KEYWORD_SET);
+                    expect(IDENTIFIER, RecoveryMessageType.ExpectingVariableNameInFor);
 
                     if (at(COLON)) {
                         advance(); // COLON
@@ -1494,7 +1483,7 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
                 }
                 parameter.done(VALUE_PARAMETER);
 
-                if (expect(IN_KEYWORD, "Expecting 'in'", L_PAR_L_BRACE_R_PAR_SET)) {
+                if (expect(IN_KEYWORD, RecoveryMessageType.ExpectingIn)) {
                     PsiBuilder.Marker range = mark();
                     parseExpression();
                     range.done(LOOP_RANGE);
@@ -1504,7 +1493,7 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
                 error("Expecting a variable name");
             }
 
-            expectNoAdvance(RPAR, "Expecting ')'");
+            expectNoAdvance(RPAR, RecoveryMessageType.ExpectingRightParenthesis.message);
             myBuilder.restoreNewlinesState();
         }
 
@@ -1562,13 +1551,13 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
             }
             else {
                 PsiBuilder.Marker parameters = mark();
-                expect(LPAR, "Expecting '('", TRY_CATCH_RECOVERY_TOKEN_SET);
+                expect(LPAR, RecoveryMessageType.ExpectingLeftParenthesisInTryCatch);
                 if (!atSet(TRY_CATCH_RECOVERY_TOKEN_SET)) {
                     myKotlinParsing.parseValueParameter(/*typeRequired = */ true);
                     if (at(COMMA)) {
                         advance(); // trailing comma
                     }
-                    expect(RPAR, "Expecting ')'", TRY_CATCH_RECOVERY_TOKEN_SET);
+                    expect(RPAR, RecoveryMessageType.ExpectingRightParenthesisInTryCatch);
                 }
                 else {
                     error("Expecting exception variable declaration");
@@ -1646,11 +1635,11 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
     private void parseCondition() {
         myBuilder.disableNewlines();
 
-        if (expect(LPAR, "Expecting a condition in parentheses '(...)'", EXPRESSION_FIRST)) {
+        if (expect(LPAR, RecoveryMessageType.ExpectingConditionInParentheses)) {
             PsiBuilder.Marker condition = mark();
             parseExpression();
             condition.done(CONDITION);
-            expect(RPAR, "Expecting ')");
+            expect(RPAR, RecoveryMessageType.ExpectingRightParenthesis);
         }
 
         myBuilder.restoreNewlinesState();
@@ -1782,7 +1771,7 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
             parseExpression();
         }
 
-        expect(RPAR, "Expecting ')'");
+        expect(RPAR, RecoveryMessageType.ExpectingRightParenthesis);
         myBuilder.restoreNewlinesState();
 
         mark.done(PARENTHESIZED);
@@ -1848,7 +1837,7 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
 
         myBuilder.disableNewlines();
 
-        if (expect(LPAR, "Expecting an argument list", EXPRESSION_FOLLOW)) {
+        if (expect(LPAR, RecoveryMessageType.ExpectingArgumentList)) {
             if (!at(RPAR)) {
                 while (true) {
                     while (at(COMMA)) errorAndAdvance("Expecting an argument");
@@ -1872,7 +1861,7 @@ public class KotlinExpressionParsing extends AbstractKotlinParsing {
                 }
             }
 
-            expect(RPAR, "Expecting ')'", EXPRESSION_FOLLOW);
+            expect(RPAR, RecoveryMessageType.ExpectingRightParenthesisInArgumentList);
         }
 
         myBuilder.restoreNewlinesState();
