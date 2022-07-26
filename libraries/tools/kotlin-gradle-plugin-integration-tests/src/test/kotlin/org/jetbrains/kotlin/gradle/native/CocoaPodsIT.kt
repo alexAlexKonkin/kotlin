@@ -832,6 +832,23 @@ class CocoaPodsIT : BaseGradleIT() {
     }
 
     @Test
+    fun testWarningOfDefaultLinkingType() {
+        with(project) {
+            gradleBuildScript().appendToCocoapodsBlock("framework { baseName = \"mycocoa\" }")
+            build("tasks") {
+                assertSuccessful()
+                assertContains("Kotlin framework 'mycocoa' for Cocoapods will be linked as STATIC library by default.")
+            }
+            gradleBuildScript().appendToCocoapodsBlock("framework { isStatic = true }")
+            build("tasks") {
+                assertSuccessful()
+                assertNotContains("Kotlin framework 'mycocoa' for Cocoapods will be linked as STATIC library by default.")
+            }
+        }
+    }
+
+
+    @Test
     fun testSyncFramework() {
         with(project) {
             hooks.addHook {

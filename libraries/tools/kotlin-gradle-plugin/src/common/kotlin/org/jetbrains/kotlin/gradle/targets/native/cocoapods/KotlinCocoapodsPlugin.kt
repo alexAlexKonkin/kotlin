@@ -168,7 +168,7 @@ open class KotlinCocoapodsPlugin : Plugin<Project> {
         kotlinExtension.supportedTargets().all { target ->
             target.binaries.framework(POD_FRAMEWORK_PREFIX) {
                 baseName = cocoapodsExtension.frameworkNameInternal
-                isStatic = true
+                setIsStaticSilently(true)
             }
         }
     }
@@ -195,7 +195,7 @@ open class KotlinCocoapodsPlugin : Plugin<Project> {
             "The project must have a target for at least one of the following platforms: " +
                     "${requestedPlatforms.joinToString { it.visibleName }}."
         }
-        fatTargets.forEach { platform, targets ->
+        fatTargets.forEach { (platform, targets) ->
             check(targets.size <= 1) {
                 "The project has more than one target for the requested platform: `${platform.visibleName}`"
             }
@@ -230,7 +230,31 @@ open class KotlinCocoapodsPlugin : Plugin<Project> {
         check(targets.size == 1) { "The project has more than one target for the requested platform: `${requestedPlatform.visibleName}`" }
 
         val frameworkLinkTask = targets.single().binaries.getFramework(POD_FRAMEWORK_PREFIX, requestedBuildType).linkTaskProvider
-        project.createSyncFrameworkTask(frameworkLinkTask.flatMap { it.destinationDirectory.map { it.asFile }}, frameworkLinkTask)
+        project.createSyncFrameworkTask(frameworkLinkTask.flatMap { it.destinationDirectory.map { it.asFile } }, frameworkLinkTask)
+    }
+
+    private fun checkFrameworkLinkingType(
+        project: Project,
+        kotlinExtension: KotlinMultiplatformExtension
+    ) = project.whenEvaluated {
+        val anyPodTarget = kotlinExtension.supportedTargets().firstOrNull() ?: return@whenEvaluated
+        val anyPodFramework = anyPodTarget.binaries.firstOrNull { binary ->
+            binary is Framework && binary.name.startsWith(POD_FRAMEWORK_PREFIX)
+        } as? Framework ?: return@whenEvaluated
+
+        val hasDefaultLinkingType = !anyPodFramework.isStaticWasReassigned
+        if (hasDefaultLinkingType) {
+            logger.warn(
+                """
+                  Kotlin framework '${anyPodFramework.baseName}' for Cocoapods will be linked as STATIC library by default.
+                  The default behavior will be changed in the next release to DYNAMIC linking.
+                  Set type of linking explicitly:
+                  framework {
+                      isStatic = true //or false
+                  }
+                """.trimIndent()
+            )
+        }
     }
 
     private fun createSyncTask(
@@ -431,10 +455,12 @@ open class KotlinCocoapodsPlugin : Plugin<Project> {
                     it.podName = project.provider { pod.name.asValidTaskName() }
                     it.podSource = project.provider<Git> { podSource }
                 }
+
                 is Url -> project.tasks.register(pod.toPodDownloadTaskName, PodDownloadUrlTask::class.java) {
                     it.podName = project.provider { pod.name.asValidTaskName() }
                     it.podSource = project.provider<Url> { podSource }
                 }
+
                 else -> return@all
             }
 
@@ -702,6 +728,7 @@ open class KotlinCocoapodsPlugin : Plugin<Project> {
             createDefaultFrameworks(kotlinExtension, cocoapodsExtension)
             registerDummyFrameworkTask(project, cocoapodsExtension)
             createSyncTask(project, kotlinExtension, cocoapodsExtension)
+            checkFrameworkLinkingType(project, kotlinExtension)
             registerPodspecTask(project, cocoapodsExtension)
 
             registerPodDownloadTask(project, cocoapodsExtension)
