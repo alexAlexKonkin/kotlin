@@ -51,8 +51,9 @@ import org.jetbrains.kotlin.gradle.logging.kotlinDebug
 import org.jetbrains.kotlin.gradle.plugin.*
 import org.jetbrains.kotlin.gradle.plugin.mpp.*
 import org.jetbrains.kotlin.gradle.plugin.statistics.KotlinBuildStatsService
-import org.jetbrains.kotlin.gradle.report.BuildMetricsReporterService
+import org.jetbrains.kotlin.gradle.report.BuildMetricsService
 import org.jetbrains.kotlin.gradle.report.BuildReportMode
+import org.jetbrains.kotlin.gradle.report.BuildReporterService
 import org.jetbrains.kotlin.gradle.report.ReportingSettings
 import org.jetbrains.kotlin.gradle.utils.*
 import org.jetbrains.kotlin.incremental.*
@@ -270,16 +271,19 @@ abstract class AbstractKotlinCompile<T : CommonCompilerArguments> @Inject constr
     internal open fun isIncrementalCompilationEnabled(): Boolean =
         incremental
 
-    @get:Internal
-    val startParameters = BuildMetricsReporterService.getStartParameters(project)
-
     @get:Input
     abstract val ownModuleName: Property<String>
 
     @get:Internal
-    internal abstract val buildMetricsReporterService: Property<BuildMetricsReporterService?>
+    internal abstract val buildMetricsService: Property<BuildMetricsService?>
 
-    internal fun reportingSettings() = buildMetricsReporterService.orNull?.parameters?.reportingSettings ?: ReportingSettings()
+    @get:Internal
+    internal abstract val buildReportService: Property<BuildReporterService>
+
+    @get:Internal
+    val startParameters = BuildReporterService.getStartParameters(project)
+
+    internal fun reportingSettings() = buildReportService.orNull?.parameters?.reportingSettings ?: ReportingSettings()
 
     @get:Internal
     protected val multiModuleICSettings: MultiModuleICSettings
@@ -400,7 +404,7 @@ abstract class AbstractKotlinCompile<T : CommonCompilerArguments> @Inject constr
             executeImpl(inputChanges, outputsBackup)
         }
 
-        buildMetricsReporterService.orNull?.also { it.addTask(path, this.javaClass, buildMetrics) }
+        buildMetricsService.orNull?.also { it.addTask(path, this.javaClass, buildMetrics) }
     }
 
     protected open fun skipCondition(): Boolean = sources.isEmpty

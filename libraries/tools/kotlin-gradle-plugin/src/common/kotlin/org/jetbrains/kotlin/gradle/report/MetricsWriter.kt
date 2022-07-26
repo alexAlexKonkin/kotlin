@@ -12,14 +12,14 @@ import org.jetbrains.kotlin.gradle.internal.build.metrics.GradleBuildMetricsData
 import org.jetbrains.kotlin.gradle.internal.build.metrics.BuildOperationData
 import org.jetbrains.kotlin.gradle.logging.kotlinDebug
 import org.jetbrains.kotlin.gradle.report.data.BuildExecutionData
-import org.jetbrains.kotlin.gradle.report.data.BuildExecutionDataProcessor
+import org.jetbrains.kotlin.gradle.report.data.BuildMetricsProcessor
 import java.io.File
 import java.io.ObjectOutputStream
 import java.io.Serializable
 
 internal class MetricsWriter(
     private val outputFile: File,
-) : BuildExecutionDataProcessor, Serializable {
+) : BuildMetricsProcessor, Serializable {
     override fun process(build: BuildExecutionData, log: Logger) {
         if (build.failureMessages.isNotEmpty()) return
 

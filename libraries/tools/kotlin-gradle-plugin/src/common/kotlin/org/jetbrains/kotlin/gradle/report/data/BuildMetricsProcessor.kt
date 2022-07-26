@@ -7,6 +7,6 @@ package org.jetbrains.kotlin.gradle.report.data
 
 import org.gradle.api.logging.Logger
 
-interface BuildExecutionDataProcessor {
+interface BuildMetricsProcessor {
     fun process(build: BuildExecutionData, log: Logger)
 }
