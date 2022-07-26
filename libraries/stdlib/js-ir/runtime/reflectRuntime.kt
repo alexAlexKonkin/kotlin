@@ -33,7 +33,7 @@ private fun getInterfaceMaskFor(obj: Ctor, type: dynamic): BitMask =
     obj.prototype.`$imask$` ?: BitMask(getInterfaceIdInRuntime(type))
 
 @Suppress("UNUSED_PARAMETER")
-private fun getKPropMetadata(paramCount: Int, setter: Any?, type: dynamic): dynamic {
+private fun getKPropMetadata(paramCount: Int, setter: Any?): dynamic {
     return propertyRefClassMetadataCache[paramCount][if (setter == null) 0 else 1]
 }
 
