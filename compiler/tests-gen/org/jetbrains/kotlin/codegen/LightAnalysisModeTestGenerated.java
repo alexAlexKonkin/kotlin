@@ -23140,6 +23140,11 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
                 runTest("compiler/testData/codegen/box/javaInterop/notNullAssertions/kt24258.kt");
             }
 
+            @TestMetadata("typeParameterWithMixedNullableAndNotNullableBounds.kt")
+            public void ignoreTypeParameterWithMixedNullableAndNotNullableBounds() throws Exception {
+                runTest("compiler/testData/codegen/box/javaInterop/notNullAssertions/typeParameterWithMixedNullableAndNotNullableBounds.kt");
+            }
+
             private void runTest(String testDataFilePath) throws Exception {
                 KotlinTestUtils.runTest(this::doTest, TargetBackend.JVM, testDataFilePath);
             }
@@ -23246,11 +23251,6 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
             @TestMetadata("staticCallErrorMessage.kt")
             public void testStaticCallErrorMessage() throws Exception {
                 runTest("compiler/testData/codegen/box/javaInterop/notNullAssertions/staticCallErrorMessage.kt");
-            }
-
-            @TestMetadata("typeParameterWithMixedNullableAndNotNullableBounds.kt")
-            public void testTypeParameterWithMixedNullableAndNotNullableBounds() throws Exception {
-                runTest("compiler/testData/codegen/box/javaInterop/notNullAssertions/typeParameterWithMixedNullableAndNotNullableBounds.kt");
             }
 
             @TestMetadata("typeParameterWithMultipleNotNullableBounds.kt")
@@ -29477,6 +29477,11 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
             @TestDataPath("$PROJECT_ROOT")
             @RunWith(JUnit3RunnerWithInners.class)
             public static class IsInitializedAndDeinitialize extends AbstractLightAnalysisModeTest {
+                @TestMetadata("isInitializedMultiFile.kt")
+                public void ignoreIsInitializedMultiFile() throws Exception {
+                    runTest("compiler/testData/codegen/box/properties/lateinit/isInitializedAndDeinitialize/isInitializedMultiFile.kt");
+                }
+
                 private void runTest(String testDataFilePath) throws Exception {
                     KotlinTestUtils.runTest(this::doTest, TargetBackend.JVM, testDataFilePath);
                 }
@@ -29498,11 +29503,6 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
                 @TestMetadata("innerSubclass.kt")
                 public void testInnerSubclass() throws Exception {
                     runTest("compiler/testData/codegen/box/properties/lateinit/isInitializedAndDeinitialize/innerSubclass.kt");
-                }
-
-                @TestMetadata("isInitializedMultiFile.kt")
-                public void testIsInitializedMultiFile() throws Exception {
-                    runTest("compiler/testData/codegen/box/properties/lateinit/isInitializedAndDeinitialize/isInitializedMultiFile.kt");
                 }
 
                 @TestMetadata("jvmStatic.kt")
@@ -31080,6 +31080,31 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
         @TestDataPath("$PROJECT_ROOT")
         @RunWith(JUnit3RunnerWithInners.class)
         public static class JavaInterop extends AbstractLightAnalysisModeTest {
+            @TestMetadata("javaArrayOfInheritedNotNullFailFast.kt")
+            public void ignoreJavaArrayOfInheritedNotNullFailFast() throws Exception {
+                runTest("compiler/testData/codegen/box/ranges/javaInterop/javaArrayOfInheritedNotNullFailFast.kt");
+            }
+
+            @TestMetadata("javaCollectionOfExplicitNotNullFailFast.kt")
+            public void ignoreJavaCollectionOfExplicitNotNullFailFast() throws Exception {
+                runTest("compiler/testData/codegen/box/ranges/javaInterop/javaCollectionOfExplicitNotNullFailFast.kt");
+            }
+
+            @TestMetadata("javaCollectionOfInheritedNotNullFailFast.kt")
+            public void ignoreJavaCollectionOfInheritedNotNullFailFast() throws Exception {
+                runTest("compiler/testData/codegen/box/ranges/javaInterop/javaCollectionOfInheritedNotNullFailFast.kt");
+            }
+
+            @TestMetadata("javaCollectionOfNotNullToTypedArrayFailFast.kt")
+            public void ignoreJavaCollectionOfNotNullToTypedArrayFailFast() throws Exception {
+                runTest("compiler/testData/codegen/box/ranges/javaInterop/javaCollectionOfNotNullToTypedArrayFailFast.kt");
+            }
+
+            @TestMetadata("javaIteratorOfNotNullFailFast.kt")
+            public void ignoreJavaIteratorOfNotNullFailFast() throws Exception {
+                runTest("compiler/testData/codegen/box/ranges/javaInterop/javaIteratorOfNotNullFailFast.kt");
+            }
+
             private void runTest(String testDataFilePath) throws Exception {
                 KotlinTestUtils.runTest(this::doTest, TargetBackend.JVM, testDataFilePath);
             }
@@ -31091,11 +31116,6 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
             @TestMetadata("javaArrayOfInheritedNotNull.kt")
             public void testJavaArrayOfInheritedNotNull() throws Exception {
                 runTest("compiler/testData/codegen/box/ranges/javaInterop/javaArrayOfInheritedNotNull.kt");
-            }
-
-            @TestMetadata("javaArrayOfInheritedNotNullFailFast.kt")
-            public void testJavaArrayOfInheritedNotNullFailFast() throws Exception {
-                runTest("compiler/testData/codegen/box/ranges/javaInterop/javaArrayOfInheritedNotNullFailFast.kt");
             }
 
             @TestMetadata("javaArrayOfMaybeNullable.kt")
@@ -31118,11 +31138,6 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
                 runTest("compiler/testData/codegen/box/ranges/javaInterop/javaCollectionOfExplicitNotNull.kt");
             }
 
-            @TestMetadata("javaCollectionOfExplicitNotNullFailFast.kt")
-            public void testJavaCollectionOfExplicitNotNullFailFast() throws Exception {
-                runTest("compiler/testData/codegen/box/ranges/javaInterop/javaCollectionOfExplicitNotNullFailFast.kt");
-            }
-
             @TestMetadata("javaCollectionOfExplicitNullable.kt")
             public void testJavaCollectionOfExplicitNullable() throws Exception {
                 runTest("compiler/testData/codegen/box/ranges/javaInterop/javaCollectionOfExplicitNullable.kt");
@@ -31131,11 +31146,6 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
             @TestMetadata("javaCollectionOfInheritedNotNull.kt")
             public void testJavaCollectionOfInheritedNotNull() throws Exception {
                 runTest("compiler/testData/codegen/box/ranges/javaInterop/javaCollectionOfInheritedNotNull.kt");
-            }
-
-            @TestMetadata("javaCollectionOfInheritedNotNullFailFast.kt")
-            public void testJavaCollectionOfInheritedNotNullFailFast() throws Exception {
-                runTest("compiler/testData/codegen/box/ranges/javaInterop/javaCollectionOfInheritedNotNullFailFast.kt");
             }
 
             @TestMetadata("javaCollectionOfMaybeNullable.kt")
@@ -31168,33 +31178,38 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
                 runTest("compiler/testData/codegen/box/ranges/javaInterop/javaCollectionOfNotNullToTypedArray.kt");
             }
 
-            @TestMetadata("javaCollectionOfNotNullToTypedArrayFailFast.kt")
-            public void testJavaCollectionOfNotNullToTypedArrayFailFast() throws Exception {
-                runTest("compiler/testData/codegen/box/ranges/javaInterop/javaCollectionOfNotNullToTypedArrayFailFast.kt");
-            }
-
             @TestMetadata("javaIteratorOfNotNull.kt")
             public void testJavaIteratorOfNotNull() throws Exception {
                 runTest("compiler/testData/codegen/box/ranges/javaInterop/javaIteratorOfNotNull.kt");
-            }
-
-            @TestMetadata("javaIteratorOfNotNullFailFast.kt")
-            public void testJavaIteratorOfNotNullFailFast() throws Exception {
-                runTest("compiler/testData/codegen/box/ranges/javaInterop/javaIteratorOfNotNullFailFast.kt");
             }
 
             @TestMetadata("compiler/testData/codegen/box/ranges/javaInterop/withIndex")
             @TestDataPath("$PROJECT_ROOT")
             @RunWith(JUnit3RunnerWithInners.class)
             public static class WithIndex extends AbstractLightAnalysisModeTest {
+                @TestMetadata("javaArrayOfInheritedNotNullWithIndexFailFast.kt")
+                public void ignoreJavaArrayOfInheritedNotNullWithIndexFailFast() throws Exception {
+                    runTest("compiler/testData/codegen/box/ranges/javaInterop/withIndex/javaArrayOfInheritedNotNullWithIndexFailFast.kt");
+                }
+
                 @TestMetadata("javaArrayOfMaybeNullableWithIndexWithNotNullLoopVariableFailFast.kt")
                 public void ignoreJavaArrayOfMaybeNullableWithIndexWithNotNullLoopVariableFailFast() throws Exception {
                     runTest("compiler/testData/codegen/box/ranges/javaInterop/withIndex/javaArrayOfMaybeNullableWithIndexWithNotNullLoopVariableFailFast.kt");
                 }
 
+                @TestMetadata("javaCollectionOfExplicitNotNullWithIndexFailFast.kt")
+                public void ignoreJavaCollectionOfExplicitNotNullWithIndexFailFast() throws Exception {
+                    runTest("compiler/testData/codegen/box/ranges/javaInterop/withIndex/javaCollectionOfExplicitNotNullWithIndexFailFast.kt");
+                }
+
                 @TestMetadata("javaCollectionOfMaybeNullableWithIndexWithNotNullLoopVariableFailFast.kt")
                 public void ignoreJavaCollectionOfMaybeNullableWithIndexWithNotNullLoopVariableFailFast() throws Exception {
                     runTest("compiler/testData/codegen/box/ranges/javaInterop/withIndex/javaCollectionOfMaybeNullableWithIndexWithNotNullLoopVariableFailFast.kt");
+                }
+
+                @TestMetadata("javaIteratorOfNotNullWithIndexFailFast.kt")
+                public void ignoreJavaIteratorOfNotNullWithIndexFailFast() throws Exception {
+                    runTest("compiler/testData/codegen/box/ranges/javaInterop/withIndex/javaIteratorOfNotNullWithIndexFailFast.kt");
                 }
 
                 private void runTest(String testDataFilePath) throws Exception {
@@ -31210,11 +31225,6 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
                     runTest("compiler/testData/codegen/box/ranges/javaInterop/withIndex/javaArrayOfInheritedNotNullWithIndex.kt");
                 }
 
-                @TestMetadata("javaArrayOfInheritedNotNullWithIndexFailFast.kt")
-                public void testJavaArrayOfInheritedNotNullWithIndexFailFast() throws Exception {
-                    runTest("compiler/testData/codegen/box/ranges/javaInterop/withIndex/javaArrayOfInheritedNotNullWithIndexFailFast.kt");
-                }
-
                 @TestMetadata("javaArrayOfMaybeNullableWithIndex.kt")
                 public void testJavaArrayOfMaybeNullableWithIndex() throws Exception {
                     runTest("compiler/testData/codegen/box/ranges/javaInterop/withIndex/javaArrayOfMaybeNullableWithIndex.kt");
@@ -31228,11 +31238,6 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
                 @TestMetadata("javaCollectionOfExplicitNotNullWithIndex.kt")
                 public void testJavaCollectionOfExplicitNotNullWithIndex() throws Exception {
                     runTest("compiler/testData/codegen/box/ranges/javaInterop/withIndex/javaCollectionOfExplicitNotNullWithIndex.kt");
-                }
-
-                @TestMetadata("javaCollectionOfExplicitNotNullWithIndexFailFast.kt")
-                public void testJavaCollectionOfExplicitNotNullWithIndexFailFast() throws Exception {
-                    runTest("compiler/testData/codegen/box/ranges/javaInterop/withIndex/javaCollectionOfExplicitNotNullWithIndexFailFast.kt");
                 }
 
                 @TestMetadata("javaCollectionOfExplicitNullableWithIndex.kt")
@@ -31253,11 +31258,6 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
                 @TestMetadata("javaIteratorOfNotNullWithIndex.kt")
                 public void testJavaIteratorOfNotNullWithIndex() throws Exception {
                     runTest("compiler/testData/codegen/box/ranges/javaInterop/withIndex/javaIteratorOfNotNullWithIndex.kt");
-                }
-
-                @TestMetadata("javaIteratorOfNotNullWithIndexFailFast.kt")
-                public void testJavaIteratorOfNotNullWithIndexFailFast() throws Exception {
-                    runTest("compiler/testData/codegen/box/ranges/javaInterop/withIndex/javaIteratorOfNotNullWithIndexFailFast.kt");
                 }
             }
         }
