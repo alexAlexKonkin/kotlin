@@ -2,7 +2,7 @@
 // IGNORE_BACKEND: JVM
 // IGNORE_BACKEND_MULTI_MODULE: JVM
 
-import java.lang.IllegalStateException
+import kotlin.IllegalStateException
 
 // FILE: 1.kt
 inline fun <T> mrun(block: () -> T) = block()
