@@ -52,6 +52,7 @@ class LocalClassesInInlineLambdasLowering(val context: CommonBackendContext) : B
                 val localClasses = mutableSetOf<IrClass>()
                 val localFunctions = mutableSetOf<IrFunction>()
                 val adaptedFunctions = mutableSetOf<IrSimpleFunction>()
+                val transformer = this
                 for (lambda in inlineLambdas) {
                     lambda.acceptChildrenVoid(object : IrElementVisitorVoid {
                         override fun visitElement(element: IrElement) {
@@ -67,6 +68,8 @@ class LocalClassesInInlineLambdasLowering(val context: CommonBackendContext) : B
                         }
 
                         override fun visitFunction(declaration: IrFunction) {
+                            declaration.transformChildren(transformer, declaration)
+
                             localFunctions.add(declaration)
                         }
 
