@@ -5059,6 +5059,12 @@ public class IrBoxJsTestGenerated extends AbstractIrBoxJsTest {
         }
 
         @Test
+        @TestMetadata("callableReferenceClassMethod.kt")
+        public void testCallableReferenceClassMethod() throws Exception {
+            runTest("js/js.translator/testData/box/inline/callableReferenceClassMethod.kt");
+        }
+
+        @Test
         @TestMetadata("callableReferenceOfLocalFun.kt")
         public void testCallableReferenceOfLocalFun() throws Exception {
             runTest("js/js.translator/testData/box/inline/callableReferenceOfLocalFun.kt");
